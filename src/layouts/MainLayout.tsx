@@ -1,12 +1,17 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
+import { usePatientStore } from "@/stores/patientStore";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
   CalendarDays,
   Stethoscope,
+  ClipboardList,
+  Pill,
   Receipt,
+  BarChart3,
   Settings,
   LogOut,
   Menu,
@@ -21,14 +26,28 @@ const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/patients", icon: Users, label: "Pacientes" },
   { to: "/appointments", icon: CalendarDays, label: "Citas" },
+  { to: "/consultations", icon: ClipboardList, label: "Historia Clinica" },
   { to: "/doctors", icon: Stethoscope, label: "Medicos" },
+  { to: "/medications", icon: Pill, label: "Medicamentos" },
   { to: "/billing", icon: Receipt, label: "Facturacion" },
+  { to: "/reports", icon: BarChart3, label: "Reportes" },
   { to: "/settings", icon: Settings, label: "Configuracion" },
 ];
 
 export default function MainLayout() {
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const { user, logout } = useAuthStore();
+  const setSearchQuery = usePatientStore((s) => s.setSearchQuery);
+  const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState("");
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchValue.trim()) {
+      setSearchQuery(searchValue.trim());
+      navigate("/patients");
+      setSearchValue("");
+    }
+  };
 
   return (
     <div className="flex h-screen bg-surface overflow-hidden">
@@ -121,7 +140,10 @@ export default function MainLayout() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Buscar paciente, cita..."
+                placeholder="Buscar paciente... (Enter)"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={handleSearch}
                 className="w-64 h-9 pl-9 pr-4 rounded-lg border border-border bg-surface text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <svg className="absolute left-3 top-2.5 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">

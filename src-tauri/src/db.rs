@@ -114,6 +114,8 @@ fn run_all_migrations(conn: &mut DbConnection) -> Result<(), FbError> {
         ("V006", &MIGRATION_V006),
         ("V008", &MIGRATION_V008),
         ("V009", &MIGRATION_V009),
+        ("V010", &MIGRATION_V010),
+        ("V011", &MIGRATION_V011),
     ];
 
     for (version, statements) in migrations {
@@ -140,6 +142,8 @@ fn run_pending_migrations(conn: &mut DbConnection) -> Result<(), FbError> {
         ("V006", &MIGRATION_V006),
         ("V008", &MIGRATION_V008),
         ("V009", &MIGRATION_V009),
+        ("V010", &MIGRATION_V010),
+        ("V011", &MIGRATION_V011),
     ];
 
     for (version, statements) in migrations {
@@ -386,5 +390,25 @@ static MIGRATION_V009: &[&str] = &[
 )"#,
     r#"CREATE UNIQUE INDEX idx_users_username ON users(username)"#
 ];
+
+static MIGRATION_V010: &[&str] = &[
+    r#"CREATE TABLE inventory_movements (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    medication_id VARCHAR(36) NOT NULL,
+    movement_type VARCHAR(10) NOT NULL,
+    quantity INTEGER NOT NULL,
+    reason VARCHAR(200),
+    reference VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (medication_id) REFERENCES medications(id)
+)"#,
+    r#"CREATE INDEX idx_movements_medication ON inventory_movements(medication_id)"#,
+    r#"CREATE INDEX idx_movements_date ON inventory_movements(created_at)"#
+];
+
+static MIGRATION_V011: &[&str] = &[
+    r#"ALTER TABLE prescriptions ADD quantity INTEGER DEFAULT 1 NOT NULL"#
+];
+
 
 

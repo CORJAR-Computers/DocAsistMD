@@ -1,30 +1,33 @@
 import { useState, useEffect } from "react";
-import { apiCall } from "@/services/api";
+import { appointmentService } from "@/services/appointmentService";
+import { patientService } from "@/services/patientService";
+import { doctorService } from "@/services/doctorService";
 import { X, CalendarPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Patient { id: string; firstName: string; lastName: string; documentId: string; }
-interface Doctor { id: string; firstName: string; lastName: string; specialty: string; }
+import type { Patient } from "@/types/patient";
+import type { Doctor } from "@/types/doctor";
+import type { AppointmentType, CreateAppointmentInput } from "@/types/appointment";
 
 interface Props {
   onClose: () => void;
   onCreated: () => void;
   preselectedPatientId?: string;
+  preselectedDateTime?: string;
 }
 
-export default function NewAppointmentModal({ onClose, onCreated, preselectedPatientId }: Props) {
+export default function NewAppointmentModal({ onClose, onCreated, preselectedPatientId, preselectedDateTime }: Props) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [patients, setPatients] = useState<Patient[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<CreateAppointmentInput>({
     patientId: preselectedPatientId || "",
     doctorId: "",
-    dateTime: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
+    dateTime: preselectedDateTime || new Date(Date.now() + 3600000).toISOString().slice(0, 16),
     durationMinutes: 30,
-    appointmentType: "consultation",
+    appointmentType: "consultation" as AppointmentType,
     reason: "",
     notes: "",
   });
@@ -33,10 +36,7 @@ export default function NewAppointmentModal({ onClose, onCreated, preselectedPat
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      apiCall<Patient[]>("get_patients"),
-      apiCall<Doctor[]>("get_doctors"),
-    ])
+    Promise.all([patientService.getAll(), doctorService.getAll()])
       .then(([p, d]) => { setPatients(p); setDoctors(d); })
       .catch(() => setError("Error cargando datos."))
       .finally(() => setLoading(false));
@@ -51,7 +51,7 @@ export default function NewAppointmentModal({ onClose, onCreated, preselectedPat
     setSaving(true);
     setError("");
     try {
-      await apiCall("create_appointment", { input: form });
+      await appointmentService.create(form);
       onCreated();
     } catch (err: any) {
       setError(err?.message || "Error al crear la cita.");

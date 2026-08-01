@@ -2,6 +2,7 @@ pub mod appointment_commands;
 pub mod auth_commands;
 pub mod consultation_commands;
 pub mod doctor_commands;
+pub mod financial_commands;
 pub mod invoice_commands;
 pub mod medication_commands;
 pub mod patient_commands;

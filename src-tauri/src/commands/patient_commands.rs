@@ -44,6 +44,19 @@ pub fn search_patients(state: State<DbState>, query: String) -> Result<Vec<Patie
 }
 
 #[tauri::command]
+pub fn update_patient(
+    state: State<DbState>,
+    id: String,
+    input: CreatePatientInput,
+) -> Result<Patient, AppError> {
+    let mut conn = state
+        .conn
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    patient_repo::update(&mut conn, &id, input)
+}
+
+#[tauri::command]
 pub fn delete_patient(state: State<DbState>, id: String) -> Result<(), AppError> {
     let mut conn = state
         .conn

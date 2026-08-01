@@ -79,3 +79,43 @@ textarea.form-input {
   height: auto;
   padding: 0.5rem 0.75rem;
 }
+
+/* ── Print styles (invoice receipts) ── */
+@media print {
+  html,
+  body,
+  #root,
+  .h-screen,
+  .overflow-hidden,
+  .overflow-y-auto {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .print-area {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    break-inside: avoid;
+  }
+
+  .print-area .p-8 {
+    padding: 0 !important;
+  }
+}

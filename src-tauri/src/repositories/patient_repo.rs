@@ -193,6 +193,47 @@ pub fn search(conn: &mut DbConnection, query: &str) -> Result<Vec<Patient>, AppE
     Ok(patients)
 }
 
+pub fn update(conn: &mut DbConnection, id: &str, input: CreatePatientInput) -> Result<Patient, AppError> {
+    let now = Utc::now().to_rfc3339();
+
+    // Update first 14 columns + id (within rsfbclient's 15-param limit)
+    conn.execute(
+        "UPDATE patients SET
+            first_name = ?, last_name = ?, document_id = ?, document_type = ?,
+            date_of_birth = ?, gender = ?, phone = ?, email = ?, address = ?,
+            blood_type = ?, allergies = ?, emergency_contact_name = ?,
+            emergency_contact_phone = ?, insurance_provider = ?
+         WHERE id = ?",
+        (
+            &input.first_name, &input.last_name, &input.document_id, &input.document_type,
+            &input.date_of_birth, &input.gender, &input.phone, &input.email, &input.address,
+            &input.blood_type, &input.allergies, &input.emergency_contact_name,
+            &input.emergency_contact_phone, &input.insurance_provider, &id,
+        ),
+    )
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Update remaining columns
+    conn.execute(
+        "UPDATE patients SET
+            insurance_policy_number = ?,
+            insurance_expiry_date = ?,
+            notes = ?,
+            updated_at = ?
+         WHERE id = ?",
+        (
+            &input.insurance_policy_number,
+            &input.insurance_expiry_date,
+            &input.notes,
+            &now,
+            &id,
+        ),
+    )
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    get_by_id(conn, id)
+}
+
 pub fn delete(conn: &mut DbConnection, id: &str) -> Result<(), AppError> {
     conn.execute("DELETE FROM patients WHERE id = ?", (id,))
         .map_err(|e| AppError::Database(e.to_string()))?;

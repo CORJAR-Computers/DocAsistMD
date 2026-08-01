@@ -1,40 +1,22 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiCall } from "@/services/api";
+import { patientService } from "@/services/patientService";
+import { appointmentService } from "@/services/appointmentService";
+import { medicationService } from "@/services/medicationService";
+import { consultationService } from "@/services/consultationService";
+import type { Consultation, Prescription } from "@/services/consultationService";
+import type { Patient } from "@/types/patient";
+import type { Appointment } from "@/types/appointment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, ClipboardList, Calendar, Pill,
-  Activity, FileText, AlertCircle, Plus, User
+  Activity, FileText, AlertCircle, Plus
 } from "lucide-react";
 import NewConsultationModal from "@/components/modals/NewConsultationModal";
 import NewAppointmentModal from "@/components/modals/NewAppointmentModal";
-
-interface Patient {
-  id: string; firstName: string; lastName: string;
-  documentId: string; documentType: string; dateOfBirth: string;
-  gender: string; phone: string; email: string; bloodType: string;
-  allergies: string; insuranceProvider: string;
-}
-
-interface Consultation {
-  id: string; appointmentId: string; patientId: string; doctorId: string;
-  vitalSigns: string; symptoms: string; diagnosis: string; cie10Code: string;
-  treatmentPlan: string; clinicalNotes: string; createdAt: string; updatedAt: string;
-}
-
-interface Prescription {
-  id: string; consultationId: string; medicationId: string;
-  dosage: string; frequency: string; duration: string;
-  instructions: string; createdAt: string;
-}
-
-interface Appointment {
-  id: string; patientId: string; patientName: string; doctorId: string;
-  doctorName: string; dateTime: string; durationMinutes: number;
-  status: string; appointmentType: string; reason: string; notes: string;
-}
+import PrescriptionPdfButton from "@/components/PrescriptionPdfButton";
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Programada", confirmed: "Confirmada", in_progress: "En Curso",
@@ -54,6 +36,7 @@ export default function PatientHistory() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [prescriptionMap, setPrescriptionMap] = useState<Record<string, Prescription[]>>({});
+  const [medicationMap, setMedicationMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"consultations" | "appointments">("consultations");
   const [showConsultModal, setShowConsultModal] = useState(false);
@@ -63,23 +46,23 @@ export default function PatientHistory() {
     if (!id) return;
     setLoading(true);
     try {
-      const [pat, consults, appts] = await Promise.all([
-        apiCall<Patient>("get_patient", { id }),
-        apiCall<Consultation[]>("get_patient_consultations", { patientId: id }),
-        apiCall<Appointment[]>("get_appointments"),
+      const [pat, consults, appts, meds] = await Promise.all([
+        patientService.getById(id),
+        consultationService.getByPatient(id),
+        appointmentService.getAll(),
+        medicationService.getAll(),
       ]);
       setPatient(pat);
       setConsultations(consults);
       setAppointments(appts.filter((a) => a.patientId === id));
+      setMedicationMap(Object.fromEntries(meds.map((m) => [m.id, m.name])));
 
       // Load prescriptions for each consultation
       const rxMap: Record<string, Prescription[]> = {};
       await Promise.all(
         consults.map(async (c) => {
           try {
-            rxMap[c.id] = await apiCall<Prescription[]>("get_consultation_prescriptions", {
-              consultationId: c.id,
-            });
+            rxMap[c.id] = await consultationService.getPrescriptions(c.id);
           } catch {
             rxMap[c.id] = [];
           }
@@ -312,19 +295,25 @@ export default function PatientHistory() {
                   {/* Prescriptions */}
                   {prescriptionMap[c.id]?.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-border/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Pill className="w-4 h-4 text-secondary" />
-                        <p className="text-xs font-semibold text-text-light uppercase tracking-wide">
-                          Fórmula Médica ({prescriptionMap[c.id].length} medicamentos)
-                        </p>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <Pill className="w-4 h-4 text-secondary" />
+                          <p className="text-xs font-semibold text-text-light uppercase tracking-wide">
+                            Fórmula Médica ({prescriptionMap[c.id].length} medicamentos)
+                          </p>
+                        </div>
+                        <PrescriptionPdfButton consultationId={c.id} compact />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {prescriptionMap[c.id].map((rx) => (
                           <div key={rx.id} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-secondary/5 border border-secondary/10">
                             <Pill className="w-3.5 h-3.5 text-secondary mt-0.5 flex-shrink-0" />
                             <div className="text-xs">
-                              <p className="font-medium text-text">{rx.medicationId}</p>
+                              <p className="font-medium text-text">{medicationMap[rx.medicationId] || "Medicamento"}</p>
                               <p className="text-text-light">{rx.dosage} — {rx.frequency} — {rx.duration}</p>
+                              {rx.quantity > 1 && (
+                                <p className="text-text-muted mt-0.5">Cantidad dispensada: {rx.quantity}</p>
+                              )}
                               {rx.instructions && <p className="text-text-muted italic mt-0.5">{rx.instructions}</p>}
                             </div>
                           </div>

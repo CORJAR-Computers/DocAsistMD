@@ -10,7 +10,10 @@ import PatientHistory from "@/pages/PatientHistory";
 import Appointments from "@/pages/Appointments";
 import Doctors from "@/pages/Doctors";
 import Consultations from "@/pages/Consultations";
+import Medications from "@/pages/Medications";
 import Billing from "@/pages/Billing";
+import InvoiceDetail from "@/pages/InvoiceDetail";
+import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import { useAuthStore } from "@/stores/authStore";
 import "./index.css";
@@ -56,11 +59,15 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/patients" element={<Patients />} />
             <Route path="/patients/new" element={<PatientForm />} />
+            <Route path="/patients/:id/edit" element={<PatientForm />} />
             <Route path="/patients/:id/history" element={<PatientHistory />} />
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/doctors" element={<Doctors />} />
             <Route path="/consultations" element={<Consultations />} />
+            <Route path="/medications" element={<Medications />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/billing/:id" element={<InvoiceDetail />} />
+            <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

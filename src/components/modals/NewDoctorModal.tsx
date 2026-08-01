@@ -1,18 +1,8 @@
 import { useState } from "react";
-import { apiCall } from "@/services/api";
+import { doctorService } from "@/services/doctorService";
+import type { CreateDoctorInput } from "@/services/doctorService";
 import { X, UserPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface CreateDoctorInput {
-  firstName: string;
-  lastName: string;
-  specialty: string;
-  licenseNumber: string;
-  phone: string;
-  email: string;
-  scheduleStart: string;
-  scheduleEnd: string;
-}
 
 interface Props {
   onClose: () => void;
@@ -45,7 +35,7 @@ export default function NewDoctorModal({ onClose, onCreated }: Props) {
     setLoading(true);
     setError("");
     try {
-      await apiCall("create_doctor", { input: form });
+      await doctorService.create(form);
       onCreated();
     } catch (err: any) {
       setError(err?.message || "Error al crear el médico.");

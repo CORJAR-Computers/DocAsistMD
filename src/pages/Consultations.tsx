@@ -2,19 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { apiCall } from "@/services/api";
+import { consultationService } from "@/services/consultationService";
+import type { Consultation } from "@/services/consultationService";
+import { patientService } from "@/services/patientService";
+import type { Patient } from "@/types/patient";
 import { ClipboardList, Plus, Search, User } from "lucide-react";
 import NewConsultationModal from "@/components/modals/NewConsultationModal";
-
-interface Consultation {
-  id: string; appointmentId: string; patientId: string; doctorId: string;
-  vitalSigns: string; symptoms: string; diagnosis: string; cie10Code: string;
-  treatmentPlan: string; clinicalNotes: string; createdAt: string; updatedAt: string;
-}
-
-interface Patient {
-  id: string; firstName: string; lastName: string; documentId: string;
-}
+import PrescriptionPdfButton from "@/components/PrescriptionPdfButton";
 
 export default function Consultations() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
@@ -26,10 +20,7 @@ export default function Consultations() {
 
   const load = () => {
     setLoading(true);
-    Promise.all([
-      apiCall<Consultation[]>("get_consultations"),
-      apiCall<Patient[]>("get_patients")
-    ])
+    Promise.all([consultationService.getAll(), patientService.getAll()])
       .then(([consults, pats]) => {
         setConsultations(consults);
         setPatients(pats);
@@ -149,6 +140,7 @@ export default function Consultations() {
                         </div>
                       </div>
                     </div>
+                    <PrescriptionPdfButton consultationId={c.id} compact />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-3 pt-3 border-t border-border/50">
                     {c.symptoms && <div><p className="font-medium text-text-light mb-1 text-xs">Síntomas</p><p className="text-text">{c.symptoms}</p></div>}

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { apiCall } from "@/services/api";
+import { invoiceService } from "@/services/invoiceService";
+import { patientService } from "@/services/patientService";
+import { appointmentService } from "@/services/appointmentService";
 import { X, Receipt, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Patient { id: string; firstName: string; lastName: string; documentId: string; }
-interface Appointment { id: string; patientId: string; patientName: string; doctorName: string; dateTime: string; }
+import type { Patient } from "@/types/patient";
+import type { Appointment } from "@/types/appointment";
 
 interface Props {
   onClose: () => void;
@@ -34,10 +35,7 @@ export default function NewInvoiceModal({ onClose, onCreated }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      apiCall<Patient[]>("get_patients"),
-      apiCall<Appointment[]>("get_appointments"),
-    ])
+    Promise.all([patientService.getAll(), appointmentService.getAll()])
       .then(([p, a]) => { setPatients(p); setAppointments(a); })
       .catch(() => setError("Error cargando datos."))
       .finally(() => setLoading(false));
@@ -55,17 +53,15 @@ export default function NewInvoiceModal({ onClose, onCreated }: Props) {
     setSaving(true);
     setError("");
     try {
-      await apiCall("create_invoice", {
-        input: {
-          patientId: form.patientId,
-          appointmentId: form.appointmentId || null,
-          subtotal: form.subtotal,
-          taxRate: form.taxRate,
-          taxAmount,
-          total,
-          paymentMethod: form.paymentMethod,
-          dueDate: form.dueDate,
-        },
+      await invoiceService.create({
+        patientId: form.patientId,
+        appointmentId: form.appointmentId || null,
+        subtotal: form.subtotal,
+        taxRate: form.taxRate,
+        taxAmount,
+        total,
+        paymentMethod: form.paymentMethod,
+        dueDate: form.dueDate,
       });
       onCreated();
     } catch (err: any) {

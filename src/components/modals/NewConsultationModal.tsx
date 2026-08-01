@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { apiCall } from "@/services/api";
+import { appointmentService } from "@/services/appointmentService";
+import { medicationService } from "@/services/medicationService";
+import { consultationService } from "@/services/consultationService";
 import { X, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Appointment { id: string; patientName: string; doctorName: string; dateTime: string; }
-interface Medication { id: string; name: string; presentation: string; concentration: string; }
+import type { Appointment } from "@/types/appointment";
+import type { Medication } from "@/types/medication";
 
 interface PrescriptionItem {
   medicationId: string;
+  quantity: number;
   dosage: string;
   frequency: string;
   duration: string;
@@ -42,10 +44,7 @@ export default function NewConsultationModal({ onClose, onCreated, preselectedAp
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      apiCall<Appointment[]>("get_appointments"),
-      apiCall<Medication[]>("get_medications"),
-    ])
+    Promise.all([appointmentService.getAll(), medicationService.getAll()])
       .then(([a, m]) => {
         // Only show in-progress or scheduled appointments
         setAppointments(a.filter(ap => ap.status === "in_progress" || ap.status === "scheduled" || ap.status === "confirmed"));
@@ -56,14 +55,14 @@ export default function NewConsultationModal({ onClose, onCreated, preselectedAp
   }, []);
 
   const addPrescription = () => {
-    setPrescriptions((prev) => [...prev, { medicationId: "", dosage: "", frequency: "1 vez al día", duration: "7 días", instructions: "" }]);
+    setPrescriptions((prev) => [...prev, { medicationId: "", quantity: 1, dosage: "", frequency: "1 vez al día", duration: "7 días", instructions: "" }]);
   };
 
   const removePrescription = (index: number) => {
     setPrescriptions((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const setPrescrField = (index: number, field: keyof PrescriptionItem, value: string) => {
+  const setPrescrField = (index: number, field: keyof PrescriptionItem, value: string | number) => {
     setPrescriptions((prev) => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
   };
 
@@ -73,17 +72,39 @@ export default function NewConsultationModal({ onClose, onCreated, preselectedAp
       setError("Debe seleccionar una cita.");
       return;
     }
+    // Pre-validate dispensed quantities BEFORE creating anything to avoid
+    // partial state (consultation created + some prescriptions dispensed
+    // but the batch failing mid-way).
+    const problems: string[] = [];
+    for (const rx of prescriptions) {
+      if (!rx.medicationId) continue;
+      const m = medications.find((x) => x.id === rx.medicationId);
+      if (!m) continue;
+      if (!rx.quantity || rx.quantity < 1) {
+        problems.push(`${m.name}: cantidad debe ser mayor que cero`);
+      } else if (rx.quantity > m.currentStock) {
+        problems.push(`${m.name}: stock insuficiente (disponible ${m.currentStock}, solicitado ${rx.quantity})`);
+      }
+    }
+    if (problems.length > 0) {
+      setError(`Verifique la formula medica antes de registrar:\n• ${problems.join("\n• ")}`);
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      const consultation = await apiCall<{ id: string }>("create_consultation", {
-        input: form,
-      });
-      // Create prescriptions
+      const consultation = await consultationService.create(form);
+      // Create prescriptions (each one dispenses from inventory atomically)
       for (const rx of prescriptions) {
         if (rx.medicationId && rx.dosage && rx.frequency) {
-          await apiCall("create_prescription", {
-            input: { consultationId: consultation.id, ...rx },
+          await consultationService.createPrescription({
+            consultationId: consultation.id,
+            medicationId: rx.medicationId,
+            dosage: rx.dosage,
+            frequency: rx.frequency,
+            duration: rx.duration,
+            instructions: rx.instructions || undefined,
+            quantity: rx.quantity,
           });
         }
       }
@@ -116,7 +137,7 @@ export default function NewConsultationModal({ onClose, onCreated, preselectedAp
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          {error && <div className="px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm border border-danger/20">{error}</div>}
+          {error && <div className="px-4 py-3 rounded-lg bg-danger/10 text-danger text-sm border border-danger/20 whitespace-pre-line">{error}</div>}
 
           {/* Appointment selection */}
           <div>
@@ -194,12 +215,41 @@ export default function NewConsultationModal({ onClose, onCreated, preselectedAp
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <select className="form-input text-sm" value={rx.medicationId} onChange={(e) => setPrescrField(i, "medicationId", e.target.value)}>
+                  <select
+                    className="form-input text-sm"
+                    value={rx.medicationId}
+                    onChange={(e) => setPrescrField(i, "medicationId", e.target.value)}
+                  >
                     <option value="">Seleccionar medicamento...</option>
                     {medications.map((m) => (
-                      <option key={m.id} value={m.id}>{m.name} {m.concentration} — {m.presentation}</option>
+                      <option key={m.id} value={m.id}>
+                        {m.name} {m.concentration} — {m.presentation} (Stock: {m.currentStock})
+                      </option>
                     ))}
                   </select>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24">
+                      <label className="block text-xs text-text-muted mb-1">Cantidad</label>
+                      <input
+                        type="number"
+                        min={1}
+                        className="form-input text-sm"
+                        value={rx.quantity}
+                        onChange={(e) => setPrescrField(i, "quantity", parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    {(() => {
+                      const m = rx.medicationId ? medications.find((x) => x.id === rx.medicationId) : undefined;
+                      if (!m) return null;
+                      const exceeds = rx.quantity > m.currentStock || rx.quantity < 1;
+                      return (
+                        <p className={`text-xs mt-4 ${exceeds ? "text-danger font-medium" : "text-text-muted"}`}>
+                          Stock disponible: {m.currentStock}
+                          {exceeds && " — excede el stock!"}
+                        </p>
+                      );
+                    })()}
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="block text-xs text-text-muted mb-1">Dosis</label>

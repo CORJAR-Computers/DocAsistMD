@@ -266,6 +266,31 @@ pub struct CreateInvoiceInput {
     pub due_date: Option<String>,
 }
 
+// ── Invoice Detail (for PDF / view) ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InvoiceDetail {
+    pub id: String,
+    pub appointment_id: Option<String>,
+    pub patient_id: String,
+    pub patient_name: String,
+    pub patient_document: Option<String>,
+    pub patient_phone: Option<String>,
+    pub patient_email: Option<String>,
+    pub patient_address: Option<String>,
+    pub doctor_name: Option<String>,
+    pub appointment_date_time: Option<String>,
+    pub subtotal: f64,
+    pub tax_rate: f64,
+    pub tax_amount: f64,
+    pub total: f64,
+    pub status: String,
+    pub payment_method: Option<String>,
+    pub due_date: Option<String>,
+    pub paid_at: Option<String>,
+    pub created_at: String,
+}
+
 // ── Prescription ──
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -277,6 +302,7 @@ pub struct Prescription {
     pub frequency: String,
     pub duration: String,
     pub instructions: Option<String>,
+    pub quantity: i32,
     pub created_at: String,
 }
 // ── Audit Log ──
@@ -303,6 +329,47 @@ pub struct CreatePrescriptionInput {
     pub frequency: String,
     pub duration: String,
     pub instructions: Option<String>,
+    pub quantity: i32,
+}
+
+// ── Prescription Detail (for PDF) ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrescriptionItem {
+    pub id: String,
+    pub medication_id: String,
+    pub medication_name: String,
+    pub presentation: String,
+    pub dosage: String,
+    pub frequency: String,
+    pub duration: String,
+    pub instructions: Option<String>,
+    pub quantity: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrescriptionDetail {
+    pub consultation_id: String,
+    pub patient_name: String,
+    pub patient_document: Option<String>,
+    pub patient_phone: Option<String>,
+    pub doctor_name: String,
+    pub doctor_specialty: String,
+    pub doctor_license: String,
+    pub diagnosis: Option<String>,
+    pub cie10_code: Option<String>,
+    pub treatment_plan: Option<String>,
+    pub clinical_notes: Option<String>,
+    pub created_at: String,
+    pub items: Vec<PrescriptionItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrescriptionPdfResult {
+    pub path: String,
+    pub verification_code: String,
 }
 
 // ── Medication Input ──
@@ -318,4 +385,61 @@ pub struct CreateMedicationInput {
     pub unit_price: f64,
     pub expiry_date: Option<String>,
     pub supplier: Option<String>,
+}
+
+// ── Inventory Movement ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InventoryMovement {
+    pub id: String,
+    pub medication_id: String,
+    pub medication_name: String,
+    pub movement_type: String, // "in" | "out"
+    pub quantity: i32,
+    pub reason: Option<String>,
+    pub reference: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateMovementInput {
+    pub medication_id: String,
+    pub movement_type: String, // "in" | "out"
+    pub quantity: i32,
+    pub reason: Option<String>,
+    pub reference: Option<String>,
+}
+
+// ── Financial Reports ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RevenueRow {
+    pub invoice_id: String,
+    pub patient_name: String,
+    pub doctor_name: Option<String>,
+    pub payment_date: Option<String>,
+    pub payment_method: Option<String>,
+    pub subtotal: f64,
+    pub tax_amount: f64,
+    pub total: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RevenueByDoctor {
+    pub doctor_name: String,
+    pub invoice_count: i64,
+    pub total: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RevenueReport {
+    pub period_start: String,
+    pub period_end: String,
+    pub total_invoices: i64,
+    pub total_revenue: f64,
+    pub rows: Vec<RevenueRow>,
+    pub by_doctor: Vec<RevenueByDoctor>,
 }

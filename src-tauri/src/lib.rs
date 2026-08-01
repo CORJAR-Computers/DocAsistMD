@@ -1,7 +1,11 @@
 mod commands;
 mod db;
 mod errors;
+mod financial_excel;
+mod financial_pdf;
+mod invoice_pdf;
 mod models;
+mod prescription_pdf;
 mod repositories;
 
 use db::DbState;
@@ -33,6 +37,7 @@ pub fn run() {
             commands::patient_commands::get_patient,
             commands::patient_commands::create_patient,
             commands::patient_commands::search_patients,
+            commands::patient_commands::update_patient,
             commands::patient_commands::delete_patient,
             // Appointment commands
             commands::appointment_commands::get_appointments,
@@ -50,15 +55,26 @@ pub fn run() {
             // Invoice commands
             commands::invoice_commands::get_invoices,
             commands::invoice_commands::get_invoice,
+            commands::invoice_commands::get_invoice_detail,
             commands::invoice_commands::create_invoice,
             commands::invoice_commands::update_invoice_status,
+            commands::invoice_commands::generate_invoice_pdf,
             // Medication commands
             commands::medication_commands::get_medications,
+            commands::medication_commands::get_medication,
             commands::medication_commands::create_medication,
-            commands::medication_commands::update_medication_stock,
+            commands::medication_commands::get_low_stock_medications,
+            commands::medication_commands::get_expiring_medications,
+            commands::medication_commands::get_inventory_movements,
+            commands::medication_commands::record_medication_movement,
             // Prescription commands
             commands::prescription_commands::get_consultation_prescriptions,
             commands::prescription_commands::create_prescription,
+            commands::prescription_commands::generate_prescription_pdf,
+            // Financial report commands
+            commands::financial_commands::get_revenue_report,
+            commands::financial_commands::generate_revenue_pdf,
+            commands::financial_commands::generate_revenue_excel,
             // Auth commands
             commands::auth_commands::login,
             commands::auth_commands::get_current_user,

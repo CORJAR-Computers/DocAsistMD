@@ -1,5 +1,5 @@
 use crate::errors::AppError;
-use crate::models::{Invoice, InvoiceWithPatient, CreateInvoiceInput};
+use crate::models::{Invoice, InvoiceWithPatient, CreateInvoiceInput, InvoiceDetail};
 use crate::db::DbConnection;
 use rsfbclient::{Queryable, Execute};
 use uuid::Uuid;
@@ -71,6 +71,61 @@ pub fn create(conn: &mut DbConnection, input: CreateInvoiceInput) -> Result<Invo
     ).map_err(|e| AppError::Database(e.to_string()))?;
 
     get_by_id(conn, &id)
+}
+
+pub fn get_detail(conn: &mut DbConnection, id: &str) -> Result<InvoiceDetail, AppError> {
+    type DetailRow1 = (
+        String, Option<String>, String, String, Option<String>, Option<String>,
+        Option<String>, Option<String>, f64, f64, f64, f64, String, Option<String>, String,
+    );
+    let rows1: Vec<DetailRow1> = conn.query(
+        "SELECT i.id, i.appointment_id, i.patient_id,
+                p.first_name || ' ' || p.last_name,
+                p.document_id, p.phone, p.email, p.address,
+                i.subtotal, i.tax_rate, i.tax_amount, i.total, i.status,
+                i.payment_method, i.created_at
+         FROM invoices i
+         JOIN patients p ON i.patient_id = p.id
+         WHERE i.id = ?",
+        (id,),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    let r1 = rows1.into_iter().next()
+        .ok_or(AppError::NotFound(format!("Factura {} no encontrada", id)))?;
+
+    type DetailRow2 = (Option<String>, Option<String>, Option<String>, Option<String>);
+    let rows2: Vec<DetailRow2> = conn.query(
+        "SELECT d.first_name || ' ' || d.last_name, a.date_time, i.due_date, i.paid_at
+         FROM invoices i
+         LEFT JOIN appointments a ON i.appointment_id = a.id
+         LEFT JOIN doctors d ON a.doctor_id = d.id
+         WHERE i.id = ?",
+        (id,),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    let r2 = rows2.into_iter().next().unwrap_or((None, None, None, None));
+
+    Ok(InvoiceDetail {
+        id: r1.0,
+        appointment_id: r1.1,
+        patient_id: r1.2,
+        patient_name: r1.3,
+        patient_document: r1.4,
+        patient_phone: r1.5,
+        patient_email: r1.6,
+        patient_address: r1.7,
+        subtotal: r1.8,
+        tax_rate: r1.9,
+        tax_amount: r1.10,
+        total: r1.11,
+        status: r1.12,
+        payment_method: r1.13,
+        created_at: r1.14,
+        doctor_name: r2.0,
+        appointment_date_time: r2.1,
+        due_date: r2.2,
+        paid_at: r2.3,
+    })
 }
 
 pub fn update_status(conn: &mut DbConnection, id: &str, status: &str, payment_method: Option<&str>) -> Result<(), AppError> {

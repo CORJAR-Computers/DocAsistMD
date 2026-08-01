@@ -71,5 +71,12 @@ pub fn create(conn: &mut DbConnection, input: CreateConsultationInput) -> Result
          &input.treatment_plan, &input.clinical_notes, &now, &now),
     ).map_err(|e| AppError::Database(e.to_string()))?;
 
+    // Mark the associated appointment as completed
+    conn.execute(
+        "UPDATE appointments SET status = 'completed', updated_at = ? WHERE id = ?",
+        (&now, &input.appointment_id),
+    )
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
     get_by_id(conn, &id)
 }

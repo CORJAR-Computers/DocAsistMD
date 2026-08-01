@@ -1,52 +1,109 @@
+import { useState, useEffect } from "react";
 import {
   Users,
   CalendarDays,
   Receipt,
-  Clock,
-  TrendingUp,
   UserPlus,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
+  CalendarClock,
+  Pill,
+  Stethoscope,
+  ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { apiCall } from "@/services/api";
+import { medicationService } from "@/services/medicationService";
+import { cn } from "@/lib/utils";
+import { APPOINTMENT_STATUS_LABELS } from "@/types/appointment";
+import type { Appointment } from "@/types/appointment";
+import type { Patient } from "@/types/patient";
+import type { Invoice } from "@/types/billing";
+import type { Medication } from "@/types/medication";
 
-const stats = [
-  { title: "Pacientes Activos", value: "1,247", change: "+12%", icon: Users, color: "text-primary", bg: "bg-primary/10" },
-  { title: "Citas Hoy", value: "18", change: "+3%", icon: CalendarDays, color: "text-secondary", bg: "bg-secondary/10" },
-  { title: "Facturacion Mensual", value: "$45,230", change: "+8%", icon: Receipt, color: "text-success", bg: "bg-success/10" },
-  { title: "Tasa Asistencia", value: "92%", change: "+2%", icon: TrendingUp, color: "text-warning", bg: "bg-warning/10" },
-];
-
-const todayAppointments = [
-  { id: 1, time: "08:00", patient: "Maria Garcia", doctor: "Dr. Mendez", type: "Consulta", status: "confirmed" },
-  { id: 2, time: "08:30", patient: "Carlos Lopez", doctor: "Dr. Mendez", type: "Seguimiento", status: "scheduled" },
-  { id: 3, time: "09:00", patient: "Ana Rodriguez", doctor: "Dra. Torres", type: "Urgencia", status: "in_progress" },
-  { id: 4, time: "09:30", patient: "Pedro Martinez", doctor: "Dr. Mendez", type: "Consulta", status: "scheduled" },
-  { id: 5, time: "10:00", patient: "Laura Sanchez", doctor: "Dra. Torres", type: "Procedimiento", status: "confirmed" },
-  { id: 6, time: "10:30", patient: "Roberto Diaz", doctor: "Dr. Mendez", type: "Consulta", status: "completed" },
-  { id: 7, time: "11:00", patient: "Carmen Vega", doctor: "Dra. Torres", type: "Telemedicina", status: "scheduled" },
-];
-
-const recentPatients = [
-  { name: "Maria Garcia", doc: "CC 1.234.567", lastVisit: "Hoy", status: "Activo" },
-  { name: "Carlos Lopez", doc: "CC 7.890.123", lastVisit: "Ayer", status: "Activo" },
-  { name: "Ana Rodriguez", doc: "CE 4.567.890", lastVisit: "Hoy", status: "Activo" },
-  { name: "Pedro Martinez", doc: "CC 2.345.678", lastVisit: "Hace 3 dias", status: "Activo" },
-  { name: "Laura Sanchez", doc: "CC 9.012.345", lastVisit: "Hace 1 semana", status: "Inactivo" },
-];
-
-const statusLabels: Record<string, { label: string; variant: "success" | "info" | "warning" | "secondary" | "danger" }> = {
-  confirmed: { label: "Confirmada", variant: "success" },
-  scheduled: { label: "Programada", variant: "info" },
-  in_progress: { label: "En Curso", variant: "warning" },
-  completed: { label: "Completada", variant: "secondary" },
-  cancelled: { label: "Cancelada", variant: "danger" },
+const STATUS_VARIANTS: Record<string, "success" | "info" | "warning" | "secondary" | "danger"> = {
+  scheduled: "info",
+  confirmed: "success",
+  in_progress: "warning",
+  completed: "secondary",
+  cancelled: "danger",
+  no_show: "secondary",
 };
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+
+const EXPIRY_DAYS = 90;
+
+const fmtShortDate = (d: string) =>
+  new Date(d).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState(0);
+  const [lowStock, setLowStock] = useState<Medication[]>([]);
+  const [expiring, setExpiring] = useState<Medication[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [appts, pats, invoices, low, exp] = await Promise.all([
+          apiCall<Appointment[]>("get_appointments"),
+          apiCall<Patient[]>("get_patients"),
+          apiCall<Invoice[]>("get_invoices"),
+          medicationService.getLowStock(),
+          medicationService.getExpiring(EXPIRY_DAYS),
+        ]);
+        setAppointments(appts);
+        setPatients(pats);
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
+        const revenue = invoices
+          .filter((i) => i.status === "paid" && new Date(i.createdAt) >= monthStart)
+          .reduce((sum, i) => sum + i.total, 0);
+        setMonthlyRevenue(revenue);
+        setLowStock(low);
+        setExpiring(exp);
+      } catch (err) {
+        console.error("Error loading dashboard:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const today = new Date().toISOString().split("T")[0];
+  const todayAppointments = appointments
+    .filter((a) => a.dateTime.startsWith(today))
+    .sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+
+  const recentPatients = [...patients]
+    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+    .slice(0, 5);
+
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  const unconfirmedTomorrow = appointments.filter(
+    (a) => a.dateTime.startsWith(tomorrow) && a.status === "scheduled"
+  ).length;
+
+  const stats = [
+    { title: "Pacientes Activos", value: loading ? "..." : patients.length.toLocaleString("es-CO"), icon: Users, color: "text-primary", bg: "bg-primary/10" },
+    { title: "Citas Hoy", value: loading ? "..." : todayAppointments.length.toString(), icon: CalendarDays, color: "text-secondary", bg: "bg-secondary/10" },
+    { title: "Facturacion del Mes", value: loading ? "..." : fmt(monthlyRevenue), icon: Receipt, color: "text-success", bg: "bg-success/10" },
+    { title: "Stock Bajo", value: loading ? "..." : lowStock.length.toString(), icon: Pill, color: "text-warning", bg: "bg-warning/10" },
+  ];
+
+  const expired = expiring.filter((m) => m.expiryDate && new Date(m.expiryDate) < new Date());
+  const expiringSoon = expiring.filter((m) => m.expiryDate && new Date(m.expiryDate) >= new Date());
+  const lowStockSorted = [...lowStock].sort((a, b) => a.currentStock - b.currentStock);
 
   return (
     <div className="space-y-6">
@@ -59,9 +116,6 @@ export default function Dashboard() {
                 <div className="min-w-0 flex-1 pr-2">
                   <p className="text-sm font-medium text-text-light truncate">{stat.title}</p>
                   <p className="text-2xl font-bold text-text mt-1">{stat.value}</p>
-                  <p className="text-xs text-success mt-1 flex items-center gap-1 flex-wrap">
-                    <TrendingUp className="w-3 h-3 flex-shrink-0" /> <span className="truncate">{stat.change} vs mes anterior</span>
-                  </p>
                 </div>
                 <div className={`w-12 h-12 rounded-xl flex-shrink-0 ${stat.bg} flex items-center justify-center`}>
                   <stat.icon className={`w-6 h-6 ${stat.color}`} />
@@ -81,23 +135,32 @@ export default function Dashboard() {
               <Badge variant="info">{todayAppointments.length} citas</Badge>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {todayAppointments.map((apt) => {
-                  const statusInfo = statusLabels[apt.status] || statusLabels.scheduled;
-                  return (
-                    <div key={apt.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-dark/50 transition-colors">
-                      <div className="text-sm font-mono font-semibold text-primary w-12">
-                        {apt.time}
+              {loading ? (
+                <div className="py-8 text-center text-text-light text-sm">Cargando citas de hoy...</div>
+              ) : todayAppointments.length === 0 ? (
+                <div className="py-8 text-center text-text-light text-sm">No hay citas programadas para hoy</div>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {todayAppointments.map((apt) => {
+                    const statusInfo = STATUS_VARIANTS[apt.status] || "secondary";
+                    return (
+                      <div key={apt.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-dark/50 transition-colors">
+                        <div className="text-sm font-mono font-semibold text-primary w-12">
+                          {new Date(apt.dateTime).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-text truncate">{apt.patientName}</p>
+                          <p className="text-xs text-text-light truncate">
+                            <Stethoscope className="w-3 h-3 inline mr-1" />
+                            {apt.doctorName}
+                          </p>
+                        </div>
+                        <Badge variant={statusInfo}>{APPOINTMENT_STATUS_LABELS[apt.status] || apt.status}</Badge>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-text truncate">{apt.patient}</p>
-                        <p className="text-xs text-text-light truncate">{apt.doctor} - {apt.type}</p>
-                      </div>
-                      <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -116,11 +179,11 @@ export default function Dashboard() {
               <button onClick={() => navigate('/appointments')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors text-sm font-medium">
                 <CalendarDays className="w-4 h-4 flex-shrink-0" /> Agendar Cita
               </button>
-              <button onClick={() => alert('Registrar consulta en desarrollo')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-success/5 hover:bg-success/10 text-emerald-600 transition-colors text-sm font-medium">
+              <button onClick={() => navigate('/consultations')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-success/5 hover:bg-success/10 text-emerald-600 transition-colors text-sm font-medium">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> Registrar Consulta
               </button>
               <button onClick={() => navigate('/appointments')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-warning/5 hover:bg-warning/10 text-amber-600 transition-colors text-sm font-medium">
-                <Clock className="w-4 h-4 flex-shrink-0" /> Ver Agenda Completa
+                <CalendarDays className="w-4 h-4 flex-shrink-0" /> Ver Agenda Completa
               </button>
             </CardContent>
           </Card>
@@ -131,42 +194,113 @@ export default function Dashboard() {
               <CardTitle className="text-base font-semibold">Pacientes Recientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {recentPatients.map((p, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex-shrink-0 bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                      {p.name.split(" ").map(n => n[0]).join("")}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-text truncate">{p.name}</p>
-                      <p className="text-xs text-text-light truncate">{p.doc}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-xs text-text-light">{p.lastVisit}</p>
-                      <Badge variant={p.status === "Activo" ? "success" : "secondary"} className="text-[10px]">
-                        {p.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {loading ? (
+                <p className="text-sm text-text-light py-4">Cargando...</p>
+              ) : recentPatients.length === 0 ? (
+                <p className="text-sm text-text-light py-4">No hay pacientes registrados</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentPatients.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => navigate(`/patients/${p.id}/history`)}
+                      className="w-full flex items-center gap-3 text-left hover:bg-surface-dark/50 rounded-lg p-1.5 -m-1.5 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full flex-shrink-0 bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                        {p.firstName?.[0]}{p.lastName?.[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-text truncate">{p.firstName} {p.lastName}</p>
+                        <p className="text-xs text-text-light truncate">{p.documentId}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <Badge variant="success" className="text-[10px]">Activo</Badge>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
 
       {/* Alerts Section */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
-            <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-amber-800 truncate">Recordatorio: 3 citas sin confirmar para manana</p>
-              <p className="text-xs text-amber-600 truncate">Utilice el modulo de Citas para enviar recordatorios automaticos</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {(unconfirmedTomorrow > 0 || lowStock.length > 0 || expiring.length > 0) && (
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            {unconfirmedTomorrow > 0 && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+                <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-amber-800 truncate">Recordatorio: {unconfirmedTomorrow} citas sin confirmar para manana</p>
+                  <p className="text-xs text-amber-600 truncate">Utilice el modulo de Citas para confirmar o cancelar</p>
+                </div>
+              </div>
+            )}
+
+            {/* Low stock alerts (backend get_low_stock_medications) */}
+            {lowStock.length > 0 && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-danger/10 border border-danger/20">
+                <AlertTriangle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-red-800">{lowStock.length} medicamento(s) con stock bajo o agotado</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {lowStockSorted.map((m) => (
+                      <span key={m.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-danger/25 text-xs">
+                        <Pill className="w-3 h-3 text-danger" />
+                        <span className="font-medium text-text truncate max-w-[150px]">{m.name}</span>
+                        <span className="text-text-light">
+                          <span className={cn("font-semibold", m.currentStock <= 0 ? "text-red-600" : "text-amber-700")}>{m.currentStock}</span>/
+                          {m.minimumStock}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-red-600 mt-2">Revise el inventario para reabastecer</p>
+                </div>
+              </div>
+            )}
+
+            {/* Expired medications */}
+            {expired.length > 0 && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-danger/10 border border-danger/20">
+                <AlertTriangle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-red-800">{expired.length} medicamento(s) VENCIDOS</p>
+                  <p className="text-xs text-red-600 mt-0.5">
+                    {expired.map((m) => `${m.name} (${m.expiryDate ? fmtShortDate(m.expiryDate) : ""})`).join(", ")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Expiring soon */}
+            {expiringSoon.length > 0 && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+                <CalendarClock className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-800">
+                    {expiringSoon.length} medicamento(s) por vencer en {EXPIRY_DAYS} dias
+                  </p>
+                  <p className="text-xs text-amber-600 mt-0.5">
+                    {expiringSoon.map((m) => `${m.name} (${m.expiryDate ? fmtShortDate(m.expiryDate) : ""})`).join(", ")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {(lowStock.length > 0 || expiring.length > 0) && (
+              <button
+                onClick={() => navigate('/medications')}
+                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline mt-1"
+              >
+                Ver inventario completo <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,29 +1,122 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { patientService } from "@/services/patientService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { DOCUMENT_TYPE_LABELS, GENDER_LABELS } from "@/types/patient";
-import type { DocumentType, Gender } from "@/types/patient";
-import { ArrowLeft, Save } from "lucide-react";
+import type { CreatePatientInput, DocumentType, Gender } from "@/types/patient";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
+
+const EMPTY_FORM = {
+  firstName: "",
+  lastName: "",
+  documentId: "",
+  documentType: "CC" as DocumentType,
+  dateOfBirth: "",
+  gender: "M" as Gender,
+  phone: "",
+  email: "",
+  address: "",
+  bloodType: "",
+  allergies: "",
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+  insuranceProvider: "",
+  insurancePolicyNumber: "",
+  insuranceExpiryDate: "",
+  notes: "",
+};
 
 export default function PatientForm() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    firstName: "", lastName: "", documentId: "", documentType: "CC" as DocumentType,
-    dateOfBirth: "", gender: "M" as Gender, phone: "", email: "", address: "",
-    bloodType: "", allergies: "", emergencyContactName: "", emergencyContactPhone: "",
-    insuranceProvider: "", insurancePolicyNumber: "", insuranceExpiryDate: "", notes: "",
-  });
+  const { id } = useParams<{ id: string }>();
+  const isEdit = !!id;
+
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isEdit) return;
+    patientService
+      .getById(id!)
+      .then((p) =>
+        setForm({
+          firstName: p.firstName || "",
+          lastName: p.lastName || "",
+          documentId: p.documentId || "",
+          documentType: p.documentType,
+          dateOfBirth: p.dateOfBirth ? p.dateOfBirth.slice(0, 10) : "",
+          gender: p.gender,
+          phone: p.phone || "",
+          email: p.email || "",
+          address: p.address || "",
+          bloodType: p.bloodType || "",
+          allergies: p.allergies || "",
+          emergencyContactName: p.emergencyContactName || "",
+          emergencyContactPhone: p.emergencyContactPhone || "",
+          insuranceProvider: p.insuranceProvider || "",
+          insurancePolicyNumber: p.insurancePolicyNumber || "",
+          insuranceExpiryDate: p.insuranceExpiryDate ? p.insuranceExpiryDate.slice(0, 10) : "",
+          notes: p.notes || "",
+        })
+      )
+      .catch((err) => {
+        console.error(err);
+        setError("Error al cargar el paciente.");
+      })
+      .finally(() => setLoading(false));
+  }, [id, isEdit]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, this calls invoke("create_patient", { ...form })
-    navigate("/patients");
+    setSaving(true);
+    setError("");
+    const input: CreatePatientInput = {
+      firstName: form.firstName,
+      lastName: form.lastName,
+      documentId: form.documentId,
+      documentType: form.documentType,
+      dateOfBirth: form.dateOfBirth,
+      gender: form.gender,
+      phone: form.phone,
+      email: form.email || "",
+      address: form.address || "",
+      bloodType: form.bloodType || undefined,
+      allergies: form.allergies || undefined,
+      emergencyContactName: form.emergencyContactName || undefined,
+      emergencyContactPhone: form.emergencyContactPhone || undefined,
+      insuranceProvider: form.insuranceProvider || undefined,
+      insurancePolicyNumber: form.insurancePolicyNumber || undefined,
+      insuranceExpiryDate: form.insuranceExpiryDate || undefined,
+      notes: form.notes || undefined,
+    };
+    try {
+      if (isEdit) {
+        await patientService.update(id!, input);
+      } else {
+        await patientService.create(input);
+      }
+      navigate("/patients");
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "Error al guardar el paciente.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-text-light gap-3">
+        <Loader2 className="w-5 h-5 animate-spin" /> Cargando paciente...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -32,10 +125,14 @@ export default function PatientForm() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-text">Nuevo Paciente</h1>
+          <h1 className="text-2xl font-bold text-text">{isEdit ? "Editar Paciente" : "Nuevo Paciente"}</h1>
           <p className="text-sm text-text-light">Complete los datos del paciente</p>
         </div>
       </div>
+
+      {error && (
+        <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm">{error}</div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Personal Info */}
@@ -120,10 +217,27 @@ export default function PatientForm() {
           </CardContent>
         </Card>
 
+        {/* Notes */}
+        <Card>
+          <CardHeader><CardTitle>Notas</CardTitle></CardHeader>
+          <CardContent>
+            <textarea
+              value={form.notes}
+              onChange={(e) => update("notes", e.target.value)}
+              placeholder="Observaciones adicionales del paciente..."
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              rows={3}
+            />
+          </CardContent>
+        </Card>
+
         {/* Actions */}
         <div className="flex items-center justify-end gap-3">
           <Button variant="outline" type="button" onClick={() => navigate("/patients")}>Cancelar</Button>
-          <Button type="submit" className="gap-2"><Save className="w-4 h-4" /> Guardar Paciente</Button>
+          <Button type="submit" className="gap-2" disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {isEdit ? "Guardar Cambios" : "Guardar Paciente"}
+          </Button>
         </div>
       </form>
     </div>
