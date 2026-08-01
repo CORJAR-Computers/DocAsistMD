@@ -108,3 +108,39 @@ pub fn delete(conn: &mut DbConnection, id: &str) -> Result<(), AppError> {
         .map_err(|e| AppError::Database(e.to_string()))?;
     Ok(())
 }
+
+pub fn update(conn: &mut DbConnection, input: crate::models::UpdatePatientInput) -> Result<Patient, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    // Build dynamic UPDATE based on provided fields
+    // We'll update all fields for simplicity - the frontend sends the full object
+    // Update first 14 columns to avoid the 15-tuple parameter limit
+    conn.execute(
+        "UPDATE patients SET
+            first_name = ?, last_name = ?, document_id = ?, document_type = ?,
+            date_of_birth = ?, gender = ?, phone = ?, email = ?, address = ?,
+            blood_type = ?, allergies = ?, emergency_contact_name = ?,
+            emergency_contact_phone = ?, insurance_provider = ?
+         WHERE id = ?",
+        (
+            &input.first_name, &input.last_name, &input.document_id, &input.document_type,
+            &input.date_of_birth, &input.gender, &input.phone, &input.email, &input.address,
+            &input.blood_type, &input.allergies, &input.emergency_contact_name,
+            &input.emergency_contact_phone, &input.insurance_provider, &input.id,
+        ),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Update remaining columns
+    conn.execute(
+        "UPDATE patients SET
+            insurance_policy_number = ?, insurance_expiry_date = ?, notes = ?,
+            updated_at = ?
+         WHERE id = ?",
+        (
+            &input.insurance_policy_number, &input.insurance_expiry_date, &input.notes,
+            &now, &input.id,
+        ),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    get_by_id(conn, &input.id)
+}

@@ -30,3 +30,12 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   transfer: "Transferencia",
   insurance: "Seguro",
 };
+
+export interface CreateInvoiceInput {
+  appointmentId: string | null;
+  patientId: string;
+  subtotal: number;
+  taxRate: number;
+  paymentMethod: PaymentMethod | null;
+  dueDate: string | null;
+}

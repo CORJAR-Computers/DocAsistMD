@@ -14,6 +14,5 @@ CREATE TABLE users (
 
 CREATE UNIQUE INDEX idx_users_username ON users(username);
 
--- Insert default admin user (password: admin123 - should be changed on first login)
-INSERT INTO users (id, username, password_hash, full_name, email, role, status)
-VALUES ('00000000-0000-0000-0000-000000000001', 'admin', 'hashed_admin123', 'Administrador', 'admin@docasistmd.com', 'admin', 'active');
+-- Default admin user is seeded by the application (db.rs) with a proper SHA-256 hash
+-- Password: admin123 (must be changed on first login)

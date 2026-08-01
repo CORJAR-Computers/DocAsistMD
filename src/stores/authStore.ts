@@ -1,37 +1,55 @@
 import { create } from "zustand";
+import { authService } from "@/services/authService";
 import type { User, AuthState, LoginCredentials } from "@/types/auth";
 
 interface AuthStore extends AuthState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
   setUser: (user: User | null) => void;
+  checkAuth: () => void;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   token: null,
   isAuthenticated: false,
 
   login: async (credentials: LoginCredentials) => {
-    // In production, this calls Tauri invoke -> Rust backend
-    // For now, simulate authentication
-    if (credentials.username && credentials.password) {
-      const mockUser: User = {
-        id: "1",
-        username: credentials.username,
-        fullName: "Dr. Carlos Mendez",
-        email: "carlos@docasistmd.com",
-        role: "doctor",
-        status: "active",
-        lastLogin: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
-      set({ user: mockUser, token: "mock-jwt-token", isAuthenticated: true });
+    try {
+      const response = await authService.login(credentials);
+      set({
+        user: response.user,
+        token: response.token,
+        isAuthenticated: true,
+      });
+      // Persist token
+      localStorage.setItem("docasistmd_token", response.token);
+      localStorage.setItem("docasistmd_user", JSON.stringify(response.user));
       return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return false;
     }
-    return false;
   },
 
-  logout: () => set({ user: null, token: null, isAuthenticated: false }),
+  logout: () => {
+    set({ user: null, token: null, isAuthenticated: false });
+    localStorage.removeItem("docasistmd_token");
+    localStorage.removeItem("docasistmd_user");
+  },
+
   setUser: (user) => set({ user, isAuthenticated: !!user }),
+
+  checkAuth: () => {
+    const token = localStorage.getItem("docasistmd_token");
+    const userStr = localStorage.getItem("docasistmd_user");
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        set({ user, token, isAuthenticated: true });
+      } catch {
+        get().logout();
+      }
+    }
+  },
 }));

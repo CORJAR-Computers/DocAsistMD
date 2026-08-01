@@ -1,3 +1,8 @@
 pub mod patient_commands;
 pub mod appointment_commands;
 pub mod auth_commands;
+pub mod doctor_commands;
+pub mod consultation_commands;
+pub mod invoice_commands;
+pub mod medication_commands;
+pub mod prescription_commands;

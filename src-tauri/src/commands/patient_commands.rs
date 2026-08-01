@@ -1,6 +1,6 @@
 use crate::db::DbState;
 use crate::errors::AppError;
-use crate::models::{Patient, CreatePatientInput};
+use crate::models::{Patient, CreatePatientInput, UpdatePatientInput};
 use crate::repositories::patient_repo;
 use tauri::State;
 
@@ -20,6 +20,12 @@ pub fn get_patient(state: State<DbState>, id: String) -> Result<Patient, AppErro
 pub fn create_patient(state: State<DbState>, input: CreatePatientInput) -> Result<Patient, AppError> {
     let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
     patient_repo::create(&mut conn, input)
+}
+
+#[tauri::command]
+pub fn update_patient(state: State<DbState>, input: UpdatePatientInput) -> Result<Patient, AppError> {
+    let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    patient_repo::update(&mut conn, input)
 }
 
 #[tauri::command]

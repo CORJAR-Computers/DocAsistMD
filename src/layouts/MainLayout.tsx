@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   Activity,
+  ClipboardList,
+  Pill,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,7 +23,9 @@ const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/patients", icon: Users, label: "Pacientes" },
   { to: "/appointments", icon: CalendarDays, label: "Citas" },
+  { to: "/consultations", icon: ClipboardList, label: "Consultas" },
   { to: "/doctors", icon: Stethoscope, label: "Medicos" },
+  { to: "/medications", icon: Pill, label: "Medicamentos" },
   { to: "/billing", icon: Receipt, label: "Facturacion" },
   { to: "/settings", icon: Settings, label: "Configuracion" },
 ];

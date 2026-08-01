@@ -38,3 +38,51 @@ pub fn get_by_id(conn: &mut DbConnection, id: &str) -> Result<Doctor, AppError> 
 
     rows.into_iter().map(map_doctor_row).next().ok_or(AppError::NotFound(format!("Doctor {} not found", id)))
 }
+
+use rsfbclient::Execute;
+use uuid::Uuid;
+use chrono::Utc;
+use crate::models::{CreateDoctorInput, UpdateDoctorInput};
+
+pub fn create(conn: &mut DbConnection, input: CreateDoctorInput) -> Result<Doctor, AppError> {
+    let id = Uuid::new_v4().to_string();
+    let now = Utc::now().to_rfc3339();
+
+    conn.execute(
+        "INSERT INTO doctors (id, first_name, last_name, specialty, license_number,
+         phone, email, schedule_start, schedule_end, working_days, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)",
+        (&id, &input.first_name, &input.last_name, &input.specialty, &input.license_number,
+         &input.phone, &input.email, &input.schedule_start, &input.schedule_end,
+         &input.working_days, &now, &now),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    get_by_id(conn, &id)
+}
+
+pub fn update(conn: &mut DbConnection, input: UpdateDoctorInput) -> Result<Doctor, AppError> {
+    let now = Utc::now().to_rfc3339();
+
+    conn.execute(
+        "UPDATE doctors SET
+            first_name = ?, last_name = ?, specialty = ?, license_number = ?,
+            phone = ?, email = ?, schedule_start = ?, schedule_end = ?,
+            working_days = ?, status = ?, updated_at = ?
+         WHERE id = ?",
+        (&input.first_name, &input.last_name, &input.specialty, &input.license_number,
+         &input.phone, &input.email, &input.schedule_start, &input.schedule_end,
+         &input.working_days, &input.status, &now, &input.id),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    get_by_id(conn, &input.id)
+}
+
+pub fn delete(conn: &mut DbConnection, id: &str) -> Result<(), AppError> {
+    // Soft delete - set status to inactive
+    let now = Utc::now().to_rfc3339();
+    conn.execute(
+        "UPDATE doctors SET status = 'inactive', updated_at = ? WHERE id = ?",
+        (&now, id),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+    Ok(())
+}
