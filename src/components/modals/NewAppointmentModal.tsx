@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { appointmentService } from "@/services/appointmentService";
+import { useAuthStore } from "@/stores/authStore";
 import { patientService } from "@/services/patientService";
 import { doctorService } from "@/services/doctorService";
 import { X, CalendarPlus, Loader2 } from "lucide-react";
@@ -51,7 +52,7 @@ export default function NewAppointmentModal({ onClose, onCreated, preselectedPat
     setSaving(true);
     setError("");
     try {
-      await appointmentService.create(form);
+      await appointmentService.create(form, useAuthStore.getState().user?.id);
       onCreated();
     } catch (err: any) {
       setError(err?.message || "Error al crear la cita.");

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePatientStore } from "@/stores/patientStore";
 import { patientService } from "@/services/patientService";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +53,7 @@ export default function Patients() {
     if (!window.confirm(`¿Eliminar al paciente ${patient.firstName} ${patient.lastName}?`)) return;
     setDeletingId(patient.id);
     try {
-      await patientService.delete(patient.id);
+      await patientService.delete(patient.id, useAuthStore.getState().user?.id);
       setPatients((prev) => prev.filter((p) => p.id !== patient.id));
     } catch (err) {
       console.error(err);

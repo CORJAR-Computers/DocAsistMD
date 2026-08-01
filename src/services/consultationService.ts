@@ -61,8 +61,11 @@ export const consultationService = {
     apiCall<Consultation>("create_consultation", { input }),
   getPrescriptions: (consultationId: string) =>
     apiCall<Prescription[]>("get_consultation_prescriptions", { consultationId }),
-  createPrescription: (input: CreatePrescriptionInput) =>
-    apiCall<Prescription>("create_prescription", { input }),
-  generatePrescriptionPdf: (consultationId: string) =>
-    apiCall<PrescriptionPdfResult>("generate_prescription_pdf", { consultationId }),
+  createPrescription: (input: CreatePrescriptionInput, userId?: string) =>
+    apiCall<Prescription>("create_prescription", userId ? { input, userId } : { input }),
+  generatePrescriptionPdf: (consultationId: string, outDir?: string) =>
+    apiCall<PrescriptionPdfResult>(
+      "generate_prescription_pdf",
+      outDir ? { consultationId, outDir } : { consultationId }
+    ),
 };

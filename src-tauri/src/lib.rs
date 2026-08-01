@@ -1,10 +1,13 @@
+mod audit_export;
 mod commands;
 mod db;
 mod errors;
+mod exports;
 mod financial_excel;
 mod financial_pdf;
 mod invoice_pdf;
 mod models;
+mod movement_export;
 mod prescription_pdf;
 mod repositories;
 
@@ -28,6 +31,7 @@ pub fn run() {
     println!("Building Tauri application...");
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(DbState {
             conn: std::sync::Mutex::new(conn),
         })
@@ -67,6 +71,10 @@ pub fn run() {
             commands::medication_commands::get_expiring_medications,
             commands::medication_commands::get_inventory_movements,
             commands::medication_commands::record_medication_movement,
+            commands::medication_commands::get_movement_detail,
+            commands::medication_commands::get_consultation_dispensed_movements,
+            commands::medication_commands::undo_prescription_dispense,
+            commands::medication_commands::export_inventory_movements,
             // Prescription commands
             commands::prescription_commands::get_consultation_prescriptions,
             commands::prescription_commands::create_prescription,
@@ -75,6 +83,9 @@ pub fn run() {
             commands::financial_commands::get_revenue_report,
             commands::financial_commands::generate_revenue_pdf,
             commands::financial_commands::generate_revenue_excel,
+            // Audit commands
+            commands::audit_commands::get_audit_log,
+            commands::audit_commands::export_audit_log,
             // Auth commands
             commands::auth_commands::login,
             commands::auth_commands::get_current_user,

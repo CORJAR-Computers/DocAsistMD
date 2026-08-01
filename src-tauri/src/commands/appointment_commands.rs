@@ -17,12 +17,13 @@ pub fn get_appointments(state: State<DbState>) -> Result<Vec<AppointmentWithName
 pub fn create_appointment(
     state: State<DbState>,
     input: CreateAppointmentInput,
+    user_id: Option<String>,
 ) -> Result<(), AppError> {
     let mut conn = state
         .conn
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    appointment_repo::create(&mut conn, input)?;
+    appointment_repo::create(&mut conn, input, user_id.as_deref())?;
     Ok(())
 }
 
@@ -31,10 +32,11 @@ pub fn update_appointment_status(
     state: State<DbState>,
     id: String,
     status: String,
+    user_id: Option<String>,
 ) -> Result<(), AppError> {
     let mut conn = state
         .conn
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    appointment_repo::update_status(&mut conn, &id, &status)
+    appointment_repo::update_status(&mut conn, &id, &status, user_id.as_deref())
 }

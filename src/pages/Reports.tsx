@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { financialService } from "@/services/financialService";
 import type { RevenueReport } from "@/services/financialService";
+import { pickExportFolder } from "@/lib/exportDialog";
 import { PAYMENT_METHOD_LABELS } from "@/types/billing";
 import {
   BarChart3,
@@ -64,14 +65,23 @@ export default function Reports() {
   };
 
   const exportFile = async (kind: "pdf" | "excel") => {
+    let outDir: string | null = null;
+    try {
+      outDir = await pickExportFolder();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "No se pudo abrir el selector de carpeta.");
+      return;
+    }
+    if (!outDir) return; // usuario canceló el selector
     setGenerating(kind);
     setError("");
     setExportResult(null);
     try {
       const path =
         kind === "pdf"
-          ? await financialService.generatePdf(startDate, endDate)
-          : await financialService.generateExcel(startDate, endDate);
+          ? await financialService.generatePdf(startDate, endDate, outDir)
+          : await financialService.generateExcel(startDate, endDate, outDir);
       setExportResult({ type: kind, path });
     } catch (err: any) {
       console.error(err);

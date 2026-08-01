@@ -8,7 +8,8 @@ import { useAuthStore } from "@/stores/authStore";
 import { apiCall } from "@/services/api";
 import { USER_ROLE_LABELS } from "@/types/auth";
 import type { UserRole } from "@/types/auth";
-import { Database, Users, Shield, Loader2, Plus, KeyRound, X } from "lucide-react";
+import { pickExportFolder, getLastExportFolder, clearLastExportFolder } from "@/lib/exportDialog";
+import { Database, Users, Shield, Loader2, Plus, KeyRound, X, FolderOpen, FolderX, RotateCcw, CheckCircle2 } from "lucide-react";
 
 interface User {
   id: string;
@@ -32,6 +33,9 @@ export default function Settings() {
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [exportFolder, setExportFolder] = useState<string | null>(() => getLastExportFolder());
+  const [folderBusy, setFolderBusy] = useState(false);
+  const [folderMsg, setFolderMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -76,6 +80,28 @@ export default function Settings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const changeExportFolder = async () => {
+    setFolderBusy(true);
+    setFolderMsg(null);
+    try {
+      const dir = await pickExportFolder();
+      if (!dir) return; // cancelado
+      setExportFolder(dir);
+      setFolderMsg({ type: "success", text: "Carpeta de exportación actualizada." });
+    } catch (err: any) {
+      console.error(err);
+      setFolderMsg({ type: "error", text: err?.message || "No se pudo abrir el selector de carpeta." });
+    } finally {
+      setFolderBusy(false);
+    }
+  };
+
+  const resetExportFolder = () => {
+    clearLastExportFolder();
+    setExportFolder(null);
+    setFolderMsg({ type: "success", text: "Carpeta restablecida a la predeterminada (Documentos/DocAsistMD)." });
   };
 
   return (
@@ -176,6 +202,46 @@ export default function Settings() {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center"><FolderOpen className="w-5 h-5 text-info" /></div>
+            <div><CardTitle>Exportaciones</CardTitle><p className="text-sm text-text-light">Carpeta de destino para reportes, auditoría, facturas y recetas</p></div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <p className="text-sm text-text-light mb-1">Carpeta guardada</p>
+              <p className="text-sm font-medium text-text font-mono truncate">
+                {exportFolder || "Predeterminada — Documentos/DocAsistMD (Reportes, Comprobantes, Recetas)"}
+              </p>
+            </div>
+          </div>
+          {folderMsg && (
+            <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg border ${folderMsg.type === "error" ? "bg-danger/10 border-danger/20 text-danger" : "bg-success/10 border-success/20 text-emerald-700"}`}>
+              {folderMsg.type === "error" ? <FolderX className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+              {folderMsg.text}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={changeExportFolder} disabled={folderBusy}>
+              {folderBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FolderOpen className="w-3.5 h-3.5" />}
+              Cambiar carpeta
+            </Button>
+            {exportFolder && (
+              <Button size="sm" variant="ghost" className="gap-1.5" onClick={resetExportFolder}>
+                <RotateCcw className="w-3.5 h-3.5" />
+                Restablecer predeterminada
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-text-muted">
+            El selector de carpeta en cada exportación se abre en esta ubicación y recuerda la última elegida.
+          </p>
         </CardContent>
       </Card>
 

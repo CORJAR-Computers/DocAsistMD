@@ -12,6 +12,7 @@ import {
   Pill,
   Receipt,
   BarChart3,
+  ScrollText,
   Settings,
   LogOut,
   Menu,
@@ -31,6 +32,7 @@ const navItems = [
   { to: "/medications", icon: Pill, label: "Medicamentos" },
   { to: "/billing", icon: Receipt, label: "Facturacion" },
   { to: "/reports", icon: BarChart3, label: "Reportes" },
+  { to: "/audit", icon: ScrollText, label: "Auditoría" },
   { to: "/settings", icon: Settings, label: "Configuracion" },
 ];
 

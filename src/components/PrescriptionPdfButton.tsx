@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { openPath } from "@tauri-apps/plugin-opener";
+import { pickExportFolder } from "@/lib/exportDialog";
 import { consultationService } from "@/services/consultationService";
 import { Button } from "@/components/ui/button";
 import { FileText, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
@@ -23,11 +24,20 @@ export default function PrescriptionPdfButton({
   const [result, setResult] = useState<{ path: string; verificationCode: string } | null>(null);
 
   const generate = async () => {
+    let outDir: string | null;
+    try {
+      outDir = await pickExportFolder();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "No se pudo abrir el selector de carpeta.");
+      return;
+    }
+    if (!outDir) return; // usuario canceló el selector
     setGenerating(true);
     setError("");
     setResult(null);
     try {
-      const res = await consultationService.generatePrescriptionPdf(consultationId);
+      const res = await consultationService.generatePrescriptionPdf(consultationId, outDir);
       setResult(res);
     } catch (err: any) {
       setError(err?.message || "No se pudo generar la receta en PDF.");

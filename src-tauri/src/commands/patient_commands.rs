@@ -26,12 +26,13 @@ pub fn get_patient(state: State<DbState>, id: String) -> Result<Patient, AppErro
 pub fn create_patient(
     state: State<DbState>,
     input: CreatePatientInput,
+    user_id: Option<String>,
 ) -> Result<Patient, AppError> {
     let mut conn = state
         .conn
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    patient_repo::create(&mut conn, input)
+    patient_repo::create(&mut conn, input, user_id.as_deref())
 }
 
 #[tauri::command]
@@ -48,19 +49,24 @@ pub fn update_patient(
     state: State<DbState>,
     id: String,
     input: CreatePatientInput,
+    user_id: Option<String>,
 ) -> Result<Patient, AppError> {
     let mut conn = state
         .conn
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    patient_repo::update(&mut conn, &id, input)
+    patient_repo::update(&mut conn, &id, input, user_id.as_deref())
 }
 
 #[tauri::command]
-pub fn delete_patient(state: State<DbState>, id: String) -> Result<(), AppError> {
+pub fn delete_patient(
+    state: State<DbState>,
+    id: String,
+    user_id: Option<String>,
+) -> Result<(), AppError> {
     let mut conn = state
         .conn
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    patient_repo::delete(&mut conn, &id)
+    patient_repo::delete(&mut conn, &id, user_id.as_deref())
 }

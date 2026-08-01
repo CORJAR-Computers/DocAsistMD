@@ -55,7 +55,11 @@ pub fn get_by_id(conn: &mut DbConnection, id: &str) -> Result<Invoice, AppError>
         .ok_or(AppError::NotFound(format!("Factura {} no encontrada", id)))
 }
 
-pub fn create(conn: &mut DbConnection, input: CreateInvoiceInput) -> Result<Invoice, AppError> {
+pub fn create(
+    conn: &mut DbConnection,
+    input: CreateInvoiceInput,
+    user_id: Option<&str>,
+) -> Result<Invoice, AppError> {
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
     let tax_amount = input.subtotal * input.tax_rate;
@@ -70,7 +74,29 @@ pub fn create(conn: &mut DbConnection, input: CreateInvoiceInput) -> Result<Invo
          &input.due_date, &now),
     ).map_err(|e| AppError::Database(e.to_string()))?;
 
-    get_by_id(conn, &id)
+    let invoice = get_by_id(conn, &id)?;
+
+    let new_values = format!(
+        "{{\"patient_id\":\"{}\",\"appointment_id\":\"{}\",\"subtotal\":{},\"tax_rate\":{},\"tax_amount\":{},\"total\":{},\"status\":\"{}\"}}",
+        crate::repositories::audit_repo::json_escape(&invoice.patient_id),
+        crate::repositories::audit_repo::json_escape(invoice.appointment_id.as_deref().unwrap_or("")),
+        invoice.subtotal,
+        invoice.tax_rate,
+        invoice.tax_amount,
+        invoice.total,
+        crate::repositories::audit_repo::json_escape(&invoice.status),
+    );
+    crate::repositories::audit_repo::log(
+        conn,
+        user_id,
+        "crear_factura",
+        "invoices",
+        Some(&id),
+        None,
+        Some(&new_values),
+    )?;
+
+    Ok(invoice)
 }
 
 pub fn get_detail(conn: &mut DbConnection, id: &str) -> Result<InvoiceDetail, AppError> {
@@ -128,8 +154,25 @@ pub fn get_detail(conn: &mut DbConnection, id: &str) -> Result<InvoiceDetail, Ap
     })
 }
 
-pub fn update_status(conn: &mut DbConnection, id: &str, status: &str, payment_method: Option<&str>) -> Result<(), AppError> {
+pub fn update_status(
+    conn: &mut DbConnection,
+    id: &str,
+    status: &str,
+    payment_method: Option<&str>,
+    user_id: Option<&str>,
+) -> Result<(), AppError> {
     let now = Utc::now().to_rfc3339();
+
+    // Capture previous status for the audit log before updating
+    let old_rows: Vec<(String,)> = conn.query(
+        "SELECT status FROM invoices WHERE id = ?",
+        (id,),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+    let old_status = old_rows
+        .into_iter()
+        .next()
+        .ok_or_else(|| AppError::NotFound(format!("Factura {} no encontrada", id)))?
+        .0;
 
     if status == "paid" {
         conn.execute(
@@ -142,6 +185,25 @@ pub fn update_status(conn: &mut DbConnection, id: &str, status: &str, payment_me
             (status, id),
         ).map_err(|e| AppError::Database(e.to_string()))?;
     }
+
+    let old_values = format!(
+        "{{\"status\":\"{}\"}}",
+        crate::repositories::audit_repo::json_escape(&old_status)
+    );
+    let new_values = format!(
+        "{{\"status\":\"{}\",\"payment_method\":\"{}\"}}",
+        crate::repositories::audit_repo::json_escape(status),
+        crate::repositories::audit_repo::json_escape(payment_method.unwrap_or("")),
+    );
+    crate::repositories::audit_repo::log(
+        conn,
+        user_id,
+        "editar_factura",
+        "invoices",
+        Some(id),
+        Some(&old_values),
+        Some(&new_values),
+    )?;
 
     Ok(())
 }

@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { appointmentService } from "@/services/appointmentService";
+import { useAuthStore } from "@/stores/authStore";
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_COLORS, APPOINTMENT_STATUS_BADGE, APPOINTMENT_TYPE_LABELS } from "@/types/appointment";
 import type { Appointment, AppointmentStatus } from "@/types/appointment";
 import {
@@ -141,7 +142,7 @@ export default function Appointments() {
   const changeStatus = async (apt: Appointment, status: AppointmentStatus) => {
     setUpdatingId(apt.id);
     try {
-      await appointmentService.updateStatus(apt.id, status);
+      await appointmentService.updateStatus(apt.id, status, useAuthStore.getState().user?.id);
       const updated = { ...apt, status };
       setAppointments((prev) => prev.map((a) => (a.id === apt.id ? updated : a)));
       setDetailApt((d) => (d?.id === apt.id ? updated : d));

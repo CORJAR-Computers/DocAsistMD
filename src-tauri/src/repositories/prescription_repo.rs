@@ -28,7 +28,12 @@ pub fn get_by_consultation(conn: &mut DbConnection, consultation_id: &str) -> Re
 
 /// Create a prescription and, atomically, dispense the medication: decrement
 /// stock and record an "out" inventory movement referencing this prescription.
-pub fn create(conn: &mut DbConnection, input: CreatePrescriptionInput) -> Result<Prescription, AppError> {
+/// Also registers an audit log entry (dispense) inside the same transaction.
+pub fn create(
+    conn: &mut DbConnection,
+    input: CreatePrescriptionInput,
+    user_id: Option<&str>,
+) -> Result<Prescription, AppError> {
     if input.quantity <= 0 {
         return Err(AppError::Validation(
             "La cantidad a dispensar debe ser mayor que cero".to_string(),
@@ -69,6 +74,21 @@ pub fn create(conn: &mut DbConnection, input: CreatePrescriptionInput) -> Result
              VALUES (?, ?, 'out', ?, 'Dispensado en receta', ?, ?)",
             (&Uuid::new_v4().to_string(), &input.medication_id, &input.quantity, &id, &now),
         ).map_err(|e| AppError::Database(e.to_string()))?;
+
+        // 4. Audit log: dispense action with the acting user
+        let new_values = format!(
+            "{{\"medication_id\":\"{}\",\"quantity\":{},\"consultation_id\":\"{}\"}}",
+            input.medication_id, input.quantity, input.consultation_id
+        );
+        crate::repositories::audit_repo::log(
+            conn,
+            user_id,
+            "dispensar_medicamento",
+            "prescriptions",
+            Some(&id),
+            None,
+            Some(&new_values),
+        )?;
 
         let rows: Vec<PrescriptionRow> = conn.query(
             "SELECT id, consultation_id, medication_id, dosage, frequency, duration, instructions, quantity, created_at

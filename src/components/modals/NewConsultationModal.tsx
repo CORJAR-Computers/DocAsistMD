@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { appointmentService } from "@/services/appointmentService";
 import { medicationService } from "@/services/medicationService";
 import { consultationService } from "@/services/consultationService";
+import { useAuthStore } from "@/stores/authStore";
 import { X, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Appointment } from "@/types/appointment";
@@ -105,7 +106,7 @@ export default function NewConsultationModal({ onClose, onCreated, preselectedAp
             duration: rx.duration,
             instructions: rx.instructions || undefined,
             quantity: rx.quantity,
-          });
+          }, useAuthStore.getState().user?.id);
         }
       }
       onCreated();

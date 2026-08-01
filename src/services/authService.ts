@@ -7,4 +7,6 @@ export const authService = {
 
   getCurrentUser: (token: string) =>
     apiCall<User>("get_current_user", { token }),
+
+  getUsers: () => apiCall<User[]>("get_users"),
 };

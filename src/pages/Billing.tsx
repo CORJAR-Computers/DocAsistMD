@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { invoiceService } from "@/services/invoiceService";
+import { useAuthStore } from "@/stores/authStore";
 import { PAYMENT_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/types/billing";
 import type { Invoice, PaymentMethod } from "@/types/billing";
 import { Receipt, DollarSign, AlertCircle, Plus, Loader2, Banknote, CreditCard, ArrowLeftRight, ShieldCheck, X, Eye } from "lucide-react";
@@ -46,7 +47,7 @@ export default function Billing() {
     if (!payingId) return;
     setSaving(true);
     try {
-      await invoiceService.updateStatus(payingId, "paid", payMethod);
+      await invoiceService.updateStatus(payingId, "paid", payMethod, useAuthStore.getState().user?.id);
       setInvoices((prev) =>
         prev.map((i) =>
           i.id === payingId

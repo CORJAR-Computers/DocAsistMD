@@ -311,6 +311,7 @@ pub struct Prescription {
 pub struct AuditLogEntry {
     pub id: String,
     pub user_id: Option<String>,
+    pub user_name: Option<String>, // resolved via LEFT JOIN to users
     pub action: String,
     pub table_name: String,
     pub record_id: Option<String>,
@@ -398,6 +399,8 @@ pub struct InventoryMovement {
     pub quantity: i32,
     pub reason: Option<String>,
     pub reference: Option<String>,
+    pub origin: String, // "receta" | "manual"
+    pub reversed_at: Option<String>,
     pub created_at: String,
 }
 
@@ -409,6 +412,14 @@ pub struct CreateMovementInput {
     pub quantity: i32,
     pub reason: Option<String>,
     pub reference: Option<String>,
+}
+
+// ── Movement Detail (movement + its reversal pair) ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MovementDetail {
+    pub movement: InventoryMovement,
+    pub reversal_pair: Option<InventoryMovement>,
 }
 
 // ── Financial Reports ──

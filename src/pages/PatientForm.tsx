@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { patientService } from "@/services/patientService";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,10 +97,11 @@ export default function PatientForm() {
       notes: form.notes || undefined,
     };
     try {
+      const userId = useAuthStore.getState().user?.id;
       if (isEdit) {
-        await patientService.update(id!, input);
+        await patientService.update(id!, input, userId);
       } else {
-        await patientService.create(input);
+        await patientService.create(input, userId);
       }
       navigate("/patients");
     } catch (err: any) {

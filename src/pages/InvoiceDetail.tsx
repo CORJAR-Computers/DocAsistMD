@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { openPath } from "@tauri-apps/plugin-opener";
+import { pickExportFolder } from "@/lib/exportDialog";
 import { invoiceService } from "@/services/invoiceService";
 import { PAYMENT_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/types/billing";
 import type { InvoiceDetail } from "@/types/billing";
@@ -65,10 +66,19 @@ export default function InvoiceDetailPage() {
 
   const downloadPdf = async () => {
     if (!id) return;
+    let outDir: string | null;
+    try {
+      outDir = await pickExportFolder();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "No se pudo abrir el selector de carpeta.");
+      return;
+    }
+    if (!outDir) return; // usuario canceló el selector
     setGenerating(true);
     setError("");
     try {
-      const path = await invoiceService.generatePdf(id);
+      const path = await invoiceService.generatePdf(id, outDir);
       setPdfPath(path);
     } catch (err: any) {
       console.error(err);

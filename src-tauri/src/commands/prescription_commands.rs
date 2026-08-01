@@ -1,9 +1,9 @@
 use crate::db::DbState;
 use crate::errors::AppError;
+use crate::exports;
 use crate::models::{Prescription, CreatePrescriptionInput, PrescriptionPdfResult};
 use crate::prescription_pdf;
 use crate::repositories::prescription_repo;
-use std::path::PathBuf;
 use tauri::State;
 
 #[tauri::command]
@@ -13,24 +13,30 @@ pub fn get_consultation_prescriptions(state: State<DbState>, consultation_id: St
 }
 
 #[tauri::command]
-pub fn create_prescription(state: State<DbState>, input: CreatePrescriptionInput) -> Result<Prescription, AppError> {
+pub fn create_prescription(
+    state: State<DbState>,
+    input: CreatePrescriptionInput,
+    user_id: Option<String>,
+) -> Result<Prescription, AppError> {
     let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
-    prescription_repo::create(&mut conn, input)
+    prescription_repo::create(&mut conn, input, user_id.as_deref())
 }
 
+/// Generate the prescription PDF with QR verification code. `out_dir` is
+/// optional: when provided the file is saved there, otherwise in
+/// Documents/DocAsistMD/Recetas. Returns the path and the verification code.
 #[tauri::command]
-pub fn generate_prescription_pdf(state: State<DbState>, consultation_id: String) -> Result<PrescriptionPdfResult, AppError> {
+pub fn generate_prescription_pdf(
+    state: State<DbState>,
+    consultation_id: String,
+    out_dir: Option<String>,
+) -> Result<PrescriptionPdfResult, AppError> {
     let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
     let detail = prescription_repo::get_detail(&mut conn, &consultation_id)?;
 
-    // Save PDF into the user's Documents folder under DocAsistMD/Recetas
-    let docs_dir = std::env::var("USERPROFILE")
-        .map(|p| PathBuf::from(p).join("Documents"))
-        .or_else(|_| std::env::var("HOME").map(|h| PathBuf::from(h).join("Documents")))
-        .unwrap_or_else(|_| PathBuf::from("."));
-    let out_dir = docs_dir.join("DocAsistMD").join("Recetas");
+    let base = exports::resolve_dir(out_dir.as_deref(), "Recetas");
     let short_id = detail.consultation_id.chars().take(8).collect::<String>().to_uppercase();
-    let out_path = out_dir.join(format!("receta-{}.pdf", short_id));
+    let out_path = base.join(format!("receta-{}.pdf", short_id));
 
     prescription_pdf::generate_prescription_pdf(&detail, &out_path)?;
 

@@ -29,8 +29,8 @@ export interface RevenueReport {
 export const financialService = {
   getRevenueReport: (startDate: string, endDate: string) =>
     apiCall<RevenueReport>("get_revenue_report", { startDate, endDate }),
-  generatePdf: (startDate: string, endDate: string) =>
-    apiCall<string>("generate_revenue_pdf", { startDate, endDate }),
-  generateExcel: (startDate: string, endDate: string) =>
-    apiCall<string>("generate_revenue_excel", { startDate, endDate }),
+  generatePdf: (startDate: string, endDate: string, outDir?: string) =>
+    apiCall<string>("generate_revenue_pdf", outDir ? { startDate, endDate, outDir } : { startDate, endDate }),
+  generateExcel: (startDate: string, endDate: string, outDir?: string) =>
+    apiCall<string>("generate_revenue_excel", outDir ? { startDate, endDate, outDir } : { startDate, endDate }),
 };

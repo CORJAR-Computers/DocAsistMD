@@ -4,6 +4,7 @@ import { patientService } from "@/services/patientService";
 import { appointmentService } from "@/services/appointmentService";
 import { medicationService } from "@/services/medicationService";
 import { consultationService } from "@/services/consultationService";
+import { useAuthStore } from "@/stores/authStore";
 import type { Consultation, Prescription } from "@/services/consultationService";
 import type { Patient } from "@/types/patient";
 import type { Appointment } from "@/types/appointment";
@@ -12,8 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, ClipboardList, Calendar, Pill,
-  Activity, FileText, AlertCircle, Plus
+  Activity, FileText, AlertCircle, Plus, Undo2, Loader2
 } from "lucide-react";
+import type { InventoryMovement } from "@/types/medication";
 import NewConsultationModal from "@/components/modals/NewConsultationModal";
 import NewAppointmentModal from "@/components/modals/NewAppointmentModal";
 import PrescriptionPdfButton from "@/components/PrescriptionPdfButton";
@@ -36,7 +38,9 @@ export default function PatientHistory() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [prescriptionMap, setPrescriptionMap] = useState<Record<string, Prescription[]>>({});
+  const [movementMap, setMovementMap] = useState<Record<string, InventoryMovement>>({});
   const [medicationMap, setMedicationMap] = useState<Record<string, string>>({});
+  const [undoingId, setUndoingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"consultations" | "appointments">("consultations");
   const [showConsultModal, setShowConsultModal] = useState(false);
@@ -57,8 +61,9 @@ export default function PatientHistory() {
       setAppointments(appts.filter((a) => a.patientId === id));
       setMedicationMap(Object.fromEntries(meds.map((m) => [m.id, m.name])));
 
-      // Load prescriptions for each consultation
+      // Load prescriptions and their dispense movements for each consultation
       const rxMap: Record<string, Prescription[]> = {};
+      const mvMap: Record<string, InventoryMovement> = {};
       await Promise.all(
         consults.map(async (c) => {
           try {
@@ -66,9 +71,18 @@ export default function PatientHistory() {
           } catch {
             rxMap[c.id] = [];
           }
+          try {
+            const mvs = await medicationService.getDispensedMovements(c.id);
+            mvs.forEach((mv) => {
+              if (mv.reference) mvMap[mv.reference] = mv;
+            });
+          } catch {
+            // Movements are optional; the history still renders without them
+          }
         })
       );
       setPrescriptionMap(rxMap);
+      setMovementMap(mvMap);
     } catch (err) {
       console.error("Error loading patient history:", err);
     } finally {
@@ -77,6 +91,25 @@ export default function PatientHistory() {
   };
 
   useEffect(() => { load(); }, [id]);
+
+  const handleUndoDispense = async (rx: Prescription) => {
+    const mv = movementMap[rx.id];
+    if (!mv) return;
+    const ok = window.confirm(
+      "¿Deshacer esta dispensación?\n\nSe restablecerá el stock, se registrará una entrada de reversión en inventario y el movimiento quedará marcado como reversado. La receta se conserva en la historia clínica."
+    );
+    if (!ok) return;
+    setUndoingId(mv.id);
+    try {
+      await medicationService.undoDispense(mv.id, useAuthStore.getState().user?.id);
+      await load();
+    } catch (err) {
+      console.error("Error al deshacer la dispensación:", err);
+      alert("No se pudo deshacer la dispensación. Verifica que no esté ya revertida.");
+    } finally {
+      setUndoingId(null);
+    }
+  };
 
   const age = patient
     ? Math.floor((Date.now() - new Date(patient.dateOfBirth).getTime()) / 31557600000)
@@ -305,19 +338,45 @@ export default function PatientHistory() {
                         <PrescriptionPdfButton consultationId={c.id} compact />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {prescriptionMap[c.id].map((rx) => (
-                          <div key={rx.id} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-secondary/5 border border-secondary/10">
-                            <Pill className="w-3.5 h-3.5 text-secondary mt-0.5 flex-shrink-0" />
-                            <div className="text-xs">
-                              <p className="font-medium text-text">{medicationMap[rx.medicationId] || "Medicamento"}</p>
-                              <p className="text-text-light">{rx.dosage} — {rx.frequency} — {rx.duration}</p>
-                              {rx.quantity > 1 && (
-                                <p className="text-text-muted mt-0.5">Cantidad dispensada: {rx.quantity}</p>
-                              )}
-                              {rx.instructions && <p className="text-text-muted italic mt-0.5">{rx.instructions}</p>}
+                        {prescriptionMap[c.id].map((rx) => {
+                          const mv = movementMap[rx.id];
+                          return (
+                            <div key={rx.id} className={`flex items-start gap-2 px-3 py-2 rounded-lg bg-secondary/5 border border-secondary/10 ${mv?.reversedAt ? "opacity-70" : ""}`}>
+                              <Pill className="w-3.5 h-3.5 text-secondary mt-0.5 flex-shrink-0" />
+                              <div className="text-xs flex-1 min-w-0">
+                                <p className="font-medium text-text">{medicationMap[rx.medicationId] || "Medicamento"}</p>
+                                <p className="text-text-light">{rx.dosage} — {rx.frequency} — {rx.duration}</p>
+                                {rx.quantity > 1 && (
+                                  <p className="text-text-muted mt-0.5">Cantidad dispensada: {rx.quantity}</p>
+                                )}
+                                {rx.instructions && <p className="text-text-muted italic mt-0.5">{rx.instructions}</p>}
+                              </div>
+                              <div className="flex-shrink-0 self-start">
+                                {mv?.reversedAt ? (
+                                  <Badge
+                                    variant="secondary"
+                                    title={`Reversado el ${new Date(mv.reversedAt).toLocaleString("es-CO")} — stock restablecido`}
+                                  >
+                                    Reversado
+                                  </Badge>
+                                ) : mv ? (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-xs gap-1 text-danger hover:text-danger hover:bg-danger/10"
+                                    disabled={undoingId === mv.id}
+                                    onClick={() => handleUndoDispense(rx)}
+                                  >
+                                    {undoingId === mv.id
+                                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                                      : <Undo2 className="w-3 h-3" />}
+                                    Deshacer
+                                  </Button>
+                                ) : null}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

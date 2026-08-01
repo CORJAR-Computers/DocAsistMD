@@ -28,3 +28,4 @@ genpdf = { version = "0.2", features = ["images"] }
 qrcode = { version = "0.14", default-features = false, features = ["image"] }
 image = "0.25"
 rust_xlsxwriter = "0.97"
+tauri-plugin-dialog = "2"

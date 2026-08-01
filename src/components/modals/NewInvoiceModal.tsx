@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoiceService } from "@/services/invoiceService";
+import { useAuthStore } from "@/stores/authStore";
 import { patientService } from "@/services/patientService";
 import { appointmentService } from "@/services/appointmentService";
 import { X, Receipt, Loader2 } from "lucide-react";
@@ -53,16 +54,19 @@ export default function NewInvoiceModal({ onClose, onCreated }: Props) {
     setSaving(true);
     setError("");
     try {
-      await invoiceService.create({
-        patientId: form.patientId,
-        appointmentId: form.appointmentId || null,
-        subtotal: form.subtotal,
-        taxRate: form.taxRate,
-        taxAmount,
-        total,
-        paymentMethod: form.paymentMethod,
-        dueDate: form.dueDate,
-      });
+      await invoiceService.create(
+        {
+          patientId: form.patientId,
+          appointmentId: form.appointmentId || null,
+          subtotal: form.subtotal,
+          taxRate: form.taxRate,
+          taxAmount,
+          total,
+          paymentMethod: form.paymentMethod,
+          dueDate: form.dueDate,
+        },
+        useAuthStore.getState().user?.id
+      );
       onCreated();
     } catch (err: any) {
       setError(err?.message || "Error al crear la factura.");

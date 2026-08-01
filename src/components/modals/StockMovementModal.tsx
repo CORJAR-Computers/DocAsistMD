@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { medicationService } from "@/services/medicationService";
+import { useAuthStore } from "@/stores/authStore";
 import type { Medication, MovementType } from "@/types/medication";
 import { X, ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ export default function StockMovementModal({ medication, initialType = "in", onC
         quantity,
         reason: reason || null,
         reference: reference || null,
-      });
+      }, useAuthStore.getState().user?.id);
       onSaved();
     } catch (err: any) {
       setError(err?.message || "Error al registrar el movimiento.");

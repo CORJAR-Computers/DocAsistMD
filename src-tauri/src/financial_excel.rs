@@ -1,4 +1,5 @@
 use crate::errors::AppError;
+use crate::exports::save_xlsx;
 use crate::models::RevenueReport;
 use rust_xlsxwriter::{Format, Workbook};
 use std::path::PathBuf;
@@ -84,14 +85,7 @@ pub fn generate_revenue_excel(report: &RevenueReport, out_path: &PathBuf) -> Res
         detail.write_number_with_format(row, 7, r.total, &money_fmt)?;
     }
 
-    if let Some(parent) = out_path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| AppError::Internal(format!("Error creando directorio: {}", e)))?;
-    }
-
-    workbook
-        .save(out_path)
-        .map_err(|e| AppError::Internal(format!("Error guardando Excel: {}", e)))?;
+    save_xlsx(&mut workbook, out_path)?;
 
     Ok(())
 }

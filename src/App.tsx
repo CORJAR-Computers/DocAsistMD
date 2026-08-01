@@ -14,6 +14,7 @@ import Medications from "@/pages/Medications";
 import Billing from "@/pages/Billing";
 import InvoiceDetail from "@/pages/InvoiceDetail";
 import Reports from "@/pages/Reports";
+import AuditLog from "@/pages/AuditLog";
 import Settings from "@/pages/Settings";
 import { useAuthStore } from "@/stores/authStore";
 import "./index.css";
@@ -68,6 +69,7 @@ function App() {
             <Route path="/billing" element={<Billing />} />
             <Route path="/billing/:id" element={<InvoiceDetail />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/audit" element={<AuditLog />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

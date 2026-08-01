@@ -35,6 +35,8 @@ export interface InventoryMovement {
   quantity: number;
   reason: string | null;
   reference: string | null;
+  origin: "receta" | "manual" | "reversion";
+  reversedAt: string | null;
   createdAt: string;
 }
 
@@ -44,4 +46,9 @@ export interface CreateMovementInput {
   quantity: number;
   reason?: string | null;
   reference?: string | null;
+}
+
+export interface MovementDetail {
+  movement: InventoryMovement;
+  reversalPair: InventoryMovement | null;
 }

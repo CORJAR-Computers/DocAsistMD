@@ -116,6 +116,7 @@ fn run_all_migrations(conn: &mut DbConnection) -> Result<(), FbError> {
         ("V009", &MIGRATION_V009),
         ("V010", &MIGRATION_V010),
         ("V011", &MIGRATION_V011),
+        ("V012", &MIGRATION_V012),
     ];
 
     for (version, statements) in migrations {
@@ -144,6 +145,7 @@ fn run_pending_migrations(conn: &mut DbConnection) -> Result<(), FbError> {
         ("V009", &MIGRATION_V009),
         ("V010", &MIGRATION_V010),
         ("V011", &MIGRATION_V011),
+        ("V012", &MIGRATION_V012),
     ];
 
     for (version, statements) in migrations {
@@ -409,6 +411,11 @@ static MIGRATION_V010: &[&str] = &[
 static MIGRATION_V011: &[&str] = &[
     r#"ALTER TABLE prescriptions ADD quantity INTEGER DEFAULT 1 NOT NULL"#
 ];
+
+static MIGRATION_V012: &[&str] = &[
+    r#"ALTER TABLE inventory_movements ADD reversed_at TIMESTAMP"#
+];
+
 
 
 

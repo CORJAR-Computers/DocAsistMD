@@ -6,12 +6,14 @@ export const patientService = {
 
   getById: (id: string) => apiCall<Patient>("get_patient", { id }),
 
-  create: (input: CreatePatientInput) => apiCall<Patient>("create_patient", { input }),
+  create: (input: CreatePatientInput, userId?: string) =>
+    apiCall<Patient>("create_patient", userId ? { input, userId } : { input }),
 
-  update: (id: string, input: CreatePatientInput) =>
-    apiCall<Patient>("update_patient", { id, input }),
+  update: (id: string, input: CreatePatientInput, userId?: string) =>
+    apiCall<Patient>("update_patient", userId ? { id, input, userId } : { id, input }),
 
   search: (query: string) => apiCall<Patient[]>("search_patients", { query }),
 
-  delete: (id: string) => apiCall<void>("delete_patient", { id }),
+  delete: (id: string, userId?: string) =>
+    apiCall<void>("delete_patient", userId ? { id, userId } : { id }),
 };
