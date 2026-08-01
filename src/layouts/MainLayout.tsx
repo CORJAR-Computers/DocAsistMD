@@ -25,18 +25,19 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useUIStore, type ThemeMode } from "@/stores/uiStore";
+import { canAccess, type ModuleKey } from "@/lib/permissions";
 
-const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/patients", icon: Users, label: "Pacientes" },
-  { to: "/appointments", icon: CalendarDays, label: "Citas" },
-  { to: "/consultations", icon: ClipboardList, label: "Historia Clinica" },
-  { to: "/doctors", icon: Stethoscope, label: "Medicos" },
-  { to: "/medications", icon: Pill, label: "Medicamentos" },
-  { to: "/billing", icon: Receipt, label: "Facturacion" },
-  { to: "/reports", icon: BarChart3, label: "Reportes" },
-  { to: "/audit", icon: ScrollText, label: "Auditoría" },
-  { to: "/settings", icon: Settings, label: "Configuracion" },
+const navItems: { to: string; icon: typeof LayoutDashboard; label: string; module: ModuleKey }[] = [
+  { to: "/", icon: LayoutDashboard, label: "Dashboard", module: "dashboard" },
+  { to: "/patients", icon: Users, label: "Pacientes", module: "patients" },
+  { to: "/appointments", icon: CalendarDays, label: "Citas", module: "appointments" },
+  { to: "/consultations", icon: ClipboardList, label: "Historia Clinica", module: "consultations" },
+  { to: "/doctors", icon: Stethoscope, label: "Medicos", module: "doctors" },
+  { to: "/medications", icon: Pill, label: "Medicamentos", module: "medications" },
+  { to: "/billing", icon: Receipt, label: "Facturacion", module: "billing" },
+  { to: "/reports", icon: BarChart3, label: "Reportes", module: "reports" },
+  { to: "/audit", icon: ScrollText, label: "Auditoría", module: "audit" },
+  { to: "/settings", icon: Settings, label: "Configuracion", module: "settings" },
 ];
 
 const themeOrder: ThemeMode[] = ["auto", "light", "dark"];
@@ -90,7 +91,7 @@ export default function MainLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
-          {navItems.map((item) => (
+          {navItems.filter((item) => canAccess(user?.role, item.module)).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

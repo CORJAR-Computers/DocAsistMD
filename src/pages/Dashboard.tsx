@@ -11,6 +11,7 @@ import {
   Pill,
   Stethoscope,
   ArrowRight,
+  Bell,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -225,17 +226,27 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Alerts Section */}
+      {/* Recordatorios del dia (alertas consolidados con acciones directas) */}
       {(unconfirmedTomorrow > 0 || lowStock.length > 0 || expiring.length > 0) && (
         <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center"><Bell className="w-4 h-4 text-warning" /></div>
+              <CardTitle className="text-base font-semibold">Recordatorios del dia</CardTitle>
+            </div>
+            <Badge variant="warning">
+              {unconfirmedTomorrow + lowStock.length + expiring.length} pendiente(s)
+            </Badge>
+          </CardHeader>
           <CardContent className="p-4 space-y-2">
             {unconfirmedTomorrow > 0 && (
               <div className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
                 <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-warning-text-dark truncate">Recordatorio: {unconfirmedTomorrow} citas sin confirmar para manana</p>
-                  <p className="text-xs text-warning-text truncate">Utilice el modulo de Citas para confirmar o cancelar</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-warning-text-dark truncate">{unconfirmedTomorrow} cita(s) sin confirmar para manana</p>
+                  <p className="text-xs text-warning-text truncate">Confirmelas para asegurar la asistencia</p>
                 </div>
+                <button onClick={() => navigate('/appointments')} className="flex-shrink-0 text-xs font-medium text-primary hover:underline">Confirmar &rarr;</button>
               </div>
             )}
 
@@ -259,6 +270,7 @@ export default function Dashboard() {
                   </div>
                   <p className="text-xs text-danger-text mt-2">Revise el inventario para reabastecer</p>
                 </div>
+                <button onClick={() => navigate('/medications')} className="flex-shrink-0 text-xs font-medium text-primary hover:underline">Reabastecer &rarr;</button>
               </div>
             )}
 

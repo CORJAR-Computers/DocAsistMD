@@ -4,11 +4,13 @@ use crate::errors::AppError;
 use crate::exports;
 use crate::models::AuditLogEntry;
 use crate::repositories::audit_repo;
+use crate::session::SessionState;
 use tauri::State;
 
 #[tauri::command]
 pub fn get_audit_log(
     state: State<DbState>,
+    session: State<SessionState>,
     table_name: Option<String>,
     user_id: Option<String>,
     action: Option<String>,
@@ -18,6 +20,7 @@ pub fn get_audit_log(
     offset: Option<i32>,
 ) -> Result<Vec<AuditLogEntry>, AppError> {
     let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    crate::session::require_admin(&session, &mut conn)?;
     let limit = limit.unwrap_or(100).clamp(1, 500);
     let offset = offset.unwrap_or(0).clamp(0, 1_000_000);
     audit_repo::get_recent(
@@ -39,6 +42,7 @@ pub fn get_audit_log(
 #[tauri::command]
 pub fn export_audit_log(
     state: State<DbState>,
+    session: State<SessionState>,
     format: String,
     table_name: Option<String>,
     user_id: Option<String>,
@@ -48,6 +52,7 @@ pub fn export_audit_log(
     out_dir: Option<String>,
 ) -> Result<String, AppError> {
     let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    crate::session::require_admin(&session, &mut conn)?;
 
     let entries = audit_repo::get_export(
         &mut conn,

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { auditService } from "@/services/auditService";
 import { authService } from "@/services/authService";
 import { pickExportFolder } from "@/lib/exportDialog";
+import { useDebouncedValue } from "@/hooks/useDebounce";
 import { AUDIT_ACTION_LABELS, AUDIT_TABLE_LABELS } from "@/types/audit";
 import type { AuditLogEntry } from "@/types/audit";
 import type { User } from "@/types/auth";
@@ -169,8 +170,10 @@ export default function AuditLog() {
     });
   };
 
+  const debouncedSearch = useDebouncedValue(search, 300);
+
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     if (!q) return entries;
     return entries.filter(
       (e) =>
@@ -179,7 +182,7 @@ export default function AuditLog() {
         e.action.toLowerCase().includes(q) ||
         e.tableName.toLowerCase().includes(q)
     );
-  }, [entries, search]);
+  }, [entries, debouncedSearch]);
 
   const actionBadge = (action: string) => {
     const label = AUDIT_ACTION_LABELS[action] ?? action;

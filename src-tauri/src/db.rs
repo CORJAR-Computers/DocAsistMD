@@ -11,6 +11,7 @@ pub struct DbState {
 
 pub fn init_connection() -> Result<DbConnection, FbError> {
     println!("Init connection...");
+    apply_pending_restore();
     let db_path = get_database_path();
     println!("DB Path: {:?}", db_path);
 
@@ -50,7 +51,7 @@ pub fn init_connection() -> Result<DbConnection, FbError> {
     Ok(conn)
 }
 
-fn get_database_path() -> PathBuf {
+pub fn get_database_path() -> PathBuf {
     let app_data = std::env::var("APPDATA")
         .or_else(|_| std::env::var("XDG_DATA_HOME"))
         .or_else(|_| std::env::var("HOME").map(|h| format!("{}/.local/share", h)))
@@ -59,6 +60,84 @@ fn get_database_path() -> PathBuf {
     PathBuf::from(app_data)
         .join("DocAsistMD")
         .join("docasistmd.fdb")
+}
+
+/// Locate the Firebird `gbak` executable (used for backup/restore).
+/// Searches the bundled Firebird folder next to the exe / cwd, plus `gbak` on PATH.
+pub fn find_gbak() -> Option<PathBuf> {
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            candidates.push(dir.join("gbak.exe"));
+            candidates.push(dir.join("Firebird-5.0.3.1683-0-windows-x64/gbak.exe"));
+        }
+    }
+    if let Ok(cwd) = std::env::current_dir() {
+        candidates.push(cwd.join("gbak.exe"));
+        candidates.push(cwd.join("Firebird-5.0.3.1683-0-windows-x64/gbak.exe"));
+    }
+    candidates.push(PathBuf::from("gbak"));
+    candidates.into_iter().find(|p| p.exists())
+}
+
+/// If a restore was staged (restore_pending.flag + docasistmd.restore.fbk),
+/// replace the database before the app connects to it. Runs at startup.
+fn apply_pending_restore() {
+    let db_path = get_database_path();
+    let dir = match db_path.parent() {
+        Some(d) => d.to_path_buf(),
+        None => return,
+    };
+    let flag = dir.join("restore_pending.flag");
+    let staged = dir.join("docasistmd.restore.fbk");
+    if !flag.exists() || !staged.exists() {
+        return;
+    }
+    let Some(gbak) = find_gbak() else {
+        eprintln!("Restore pendiente pero no se encontró gbak.");
+        return;
+    };
+
+    let db_str = db_path.to_string_lossy().to_string();
+    let old_path = dir.join("docasistmd.fdb.old");
+    let staged_str = staged.to_string_lossy().to_string();
+
+    // Move the current db aside so `gbak -c` can create the new one.
+    if db_path.exists() {
+        let _ = std::fs::rename(&db_path, &old_path);
+    }
+    let out = std::process::Command::new(&gbak)
+        .arg("-c")
+        .arg(&staged_str)
+        .arg(&db_str)
+        .args(["-user", "SYSDBA", "-password", "masterkey"])
+        .output();
+
+    match out {
+        Ok(o) if o.status.success() => {
+            let _ = std::fs::remove_file(&flag);
+            let _ = std::fs::remove_file(&staged);
+            let _ = std::fs::remove_file(&old_path);
+            println!("Restore aplicado correctamente.");
+        }
+        Ok(o) => {
+            eprintln!(
+                "Restore falló (se restaura la base anterior): {}",
+                String::from_utf8_lossy(&o.stderr)
+            );
+            let _ = std::fs::remove_file(&flag);
+            if old_path.exists() {
+                let _ = std::fs::rename(&old_path, &db_path);
+            }
+        }
+        Err(e) => {
+            eprintln!("Restore error: {}", e);
+            let _ = std::fs::remove_file(&flag);
+            if old_path.exists() {
+                let _ = std::fs::rename(&old_path, &db_path);
+            }
+        }
+    }
 }
 
 fn ensure_migration_table(conn: &mut DbConnection) -> Result<(), FbError> {

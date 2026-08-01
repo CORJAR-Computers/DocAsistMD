@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePatientStore } from "@/stores/patientStore";
 import { patientService } from "@/services/patientService";
+import { useDebouncedValue } from "@/hooks/useDebounce";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,8 +64,10 @@ export default function Patients() {
     }
   };
 
+  const debouncedQuery = useDebouncedValue(searchQuery, 300);
+
   const filtered = patients.filter((p) => {
-    const q = searchQuery.toLowerCase();
+    const q = debouncedQuery.toLowerCase();
     return (
       (p.firstName || "").toLowerCase().includes(q) ||
       (p.lastName || "").toLowerCase().includes(q) ||

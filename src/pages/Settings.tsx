@@ -8,8 +8,9 @@ import { useAuthStore } from "@/stores/authStore";
 import { apiCall } from "@/services/api";
 import { USER_ROLE_LABELS } from "@/types/auth";
 import type { UserRole } from "@/types/auth";
-import { pickExportFolder, getLastExportFolder, clearLastExportFolder } from "@/lib/exportDialog";
-import { Database, Users, Shield, Loader2, Plus, KeyRound, X, FolderOpen, FolderX, RotateCcw, CheckCircle2 } from "lucide-react";
+import { pickExportFolder, getLastExportFolder, clearLastExportFolder, pickBackupFile } from "@/lib/exportDialog";
+import { Database, Users, Shield, Loader2, Plus, KeyRound, X, FolderOpen, FolderX, RotateCcw, CheckCircle2, HardDriveDownload, UploadCloud, AlertTriangle } from "lucide-react";
+import { toast } from "@/stores/uiStore";
 
 interface User {
   id: string;
@@ -44,11 +45,69 @@ export default function Settings() {
     role: "receptionist" as UserRole,
   });
 
+  // ── Backup / Restore ──
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const [backupResult, setBackupResult] = useState<{ path: string; sizeBytes: number } | null>(null);
+  const [restoreMsg, setRestoreMsg] = useState<{ type: "info" | "error"; text: string } | null>(null);
+  const [pendingRestoreFile, setPendingRestoreFile] = useState<string | null>(null);
+
+  const handleBackup = async () => {
+    setBackupBusy(true);
+    setBackupResult(null);
+    try {
+      const dir = await pickExportFolder();
+      if (!dir) return; // cancelado
+      const result = await apiCall<{ path: string; file_name: string; size_bytes: number }>(
+        "backup_database",
+        { destinationDir: dir }
+      );
+      setBackupResult({ path: result.path, sizeBytes: result.size_bytes });
+      toast.success(
+        "Respaldo creado",
+        `${result.file_name} (${(result.size_bytes / 1024).toFixed(1)} KB)`
+      );
+    } catch (err: any) {
+      console.error(err);
+      toast.error("No se pudo crear el respaldo", err?.message);
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handlePickRestore = async () => {
+    setRestoreMsg(null);
+    try {
+      const file = await pickBackupFile();
+      if (!file) return; // cancelado
+      if (!window.confirm(
+        `¿Restaurar desde "${file.split(/[\\/]/).pop()}"?\n\nSe tomará un respaldo de seguridad de la base actual y la restauración se aplicará al reiniciar la aplicación.`
+      )) return;
+      setRestoreBusy(true);
+      const result = await apiCall<{ restartRequired: boolean; message: string; safetyBackupPath: string }>(
+        "restore_database",
+        { sourcePath: file }
+      );
+      setPendingRestoreFile(file);
+      setRestoreMsg({ type: "info", text: `${result.message}. Respaldo de seguridad: ${result.safetyBackupPath}` });
+      toast.info("Restauración programada", result.message);
+    } catch (err: any) {
+      console.error(err);
+      setRestoreMsg({ type: "error", text: err?.message || "No se pudo restaurar." });
+      toast.error("No se pudo restaurar", err?.message);
+    } finally {
+      setRestoreBusy(false);
+    }
+  };
+
   const load = () => {
     setLoading(true);
     apiCall<User[]>("get_users")
       .then(setUsers)
-      .catch(console.error)
+      .catch((err: any) => {
+        console.error(err);
+        toast.error("No se pudieron cargar los usuarios", err?.message);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -75,8 +134,10 @@ export default function Settings() {
       setShowCreate(false);
       setForm({ username: "", password: "", fullName: "", email: "", role: "receptionist" });
       load();
+      toast.success("Usuario creado", `${form.username} con rol ${USER_ROLE_LABELS[form.role]}`);
     } catch (err: any) {
       setError(err?.message || "Error al crear el usuario.");
+      toast.error("No se pudo crear el usuario", err?.message);
     } finally {
       setSaving(false);
     }
@@ -124,6 +185,52 @@ export default function Settings() {
             <div><p className="text-sm text-text-light">Ubicacion</p><p className="text-sm font-medium text-text font-mono">%APPDATA%/DocAsistMD/</p></div>
             <div><p className="text-sm text-text-light">Modo</p><p className="text-sm font-medium text-success">Embedded (sin servidor)</p></div>
             <div><p className="text-sm text-text-light">Estado</p><p className="text-sm font-medium text-success">Conectado</p></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center"><HardDriveDownload className="w-5 h-5 text-warning" /></div>
+            <div><CardTitle>Respaldo y Restauracion</CardTitle><p className="text-sm text-text-light">Backup (gbak) y restauracion de la base de datos</p></div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-text-muted">
+            Cree respaldos periodicos para proteger la informacion del consultorio. La restauracion toma un
+            respaldo de seguridad previo y se aplica al reiniciar la aplicacion.
+          </p>
+
+          {backupResult && (
+            <div className="flex items-start gap-2 text-sm px-3 py-2 rounded-lg border bg-success/10 border-success/20 text-success-text">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="font-medium">Respaldo generado correctamente</p>
+                <p className="text-xs font-mono truncate">{backupResult.path}</p>
+              </div>
+            </div>
+          )}
+
+          {restoreMsg && (
+            <div className={`flex items-start gap-2 text-sm px-3 py-2 rounded-lg border ${restoreMsg.type === "error" ? "bg-danger/10 border-danger/20 text-danger" : "bg-info/10 border-info/20 text-info-text"}`}>
+              {restoreMsg.type === "error" ? <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" /> : <UploadCloud className="w-4 h-4 flex-shrink-0 mt-0.5" />}
+              <div className="min-w-0">
+                <p className="font-medium">{pendingRestoreFile ? `Restauracion pendiente: ${pendingRestoreFile.split(/[\\/]/).pop()}` : "Informacion"}</p>
+                <p className="text-xs break-words">{restoreMsg.text}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <Button className="gap-1.5" onClick={handleBackup} disabled={backupBusy}>
+              {backupBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <HardDriveDownload className="w-4 h-4" />}
+              Crear respaldo
+            </Button>
+            <Button variant="outline" className="gap-1.5" onClick={handlePickRestore} disabled={restoreBusy}>
+              {restoreBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+              Restaurar respaldo...
+            </Button>
           </div>
         </CardContent>
       </Card>

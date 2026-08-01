@@ -156,7 +156,6 @@ pub struct LoginRequest {
 #[serde(rename_all = "camelCase")]
 pub struct LoginResponse {
     pub user: User,
-    pub token: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -420,6 +419,23 @@ pub struct CreateMovementInput {
 pub struct MovementDetail {
     pub movement: InventoryMovement,
     pub reversal_pair: Option<InventoryMovement>,
+}
+
+// ── Backup / Restore ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupResult {
+    pub path: String,
+    pub file_name: String,
+    pub size_bytes: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreResult {
+    pub restart_required: bool,
+    pub message: String,
+    pub safety_backup_path: String,
 }
 
 // ── Financial Reports ──

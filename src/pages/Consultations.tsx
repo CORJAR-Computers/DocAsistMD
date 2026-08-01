@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import type { Patient } from "@/types/patient";
 import { ClipboardList, Plus, Search, User } from "lucide-react";
 import NewConsultationModal from "@/components/modals/NewConsultationModal";
 import PrescriptionPdfButton from "@/components/PrescriptionPdfButton";
+import { useDebouncedValue } from "@/hooks/useDebounce";
 
 export default function Consultations() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
@@ -33,7 +34,9 @@ export default function Consultations() {
 
   const patientMap = new Map(patients.map(p => [p.id, p]));
 
-  const filteredConsultations = consultations.filter((c) => {
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
+
+  const filteredConsultations = useMemo(() => consultations.filter((c) => {
     const matchesPatient = selectedPatientId === "all" || c.patientId === selectedPatientId;
     const patient = patientMap.get(c.patientId);
     const patientName = patient ? `${patient.firstName} ${patient.lastName}`.toLowerCase() : "";
@@ -48,7 +51,7 @@ export default function Consultations() {
       patientDoc.includes(query);
 
     return matchesPatient && matchesSearch;
-  });
+  }), [consultations, selectedPatientId, debouncedSearch]);
 
   return (
     <div className="space-y-6">

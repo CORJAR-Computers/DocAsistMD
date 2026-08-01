@@ -10,6 +10,9 @@ mod models;
 mod movement_export;
 mod prescription_pdf;
 mod repositories;
+mod session;
+#[cfg(test)]
+mod session_flow_tests;
 #[cfg(test)]
 mod test_utils;
 
@@ -31,12 +34,18 @@ pub fn run() {
     };
 
     println!("Building Tauri application...");
+    // Sesión persistida del último arranque (se recarga y valida en Rust).
+    let session_state = session::SessionState {
+        current: std::sync::Mutex::new(session::load_session_from_disk()),
+    };
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(DbState {
             conn: std::sync::Mutex::new(conn),
         })
+        .manage(session_state)
         .invoke_handler(tauri::generate_handler![
             // Patient commands
             commands::patient_commands::get_patients,
@@ -90,10 +99,14 @@ pub fn run() {
             commands::audit_commands::export_audit_log,
             // Auth commands
             commands::auth_commands::login,
+            commands::auth_commands::logout,
             commands::auth_commands::get_current_user,
             commands::auth_commands::create_user,
             commands::auth_commands::get_users,
             commands::auth_commands::change_password,
+            // Backup / Restore
+            commands::backup_commands::backup_database,
+            commands::backup_commands::restore_database,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

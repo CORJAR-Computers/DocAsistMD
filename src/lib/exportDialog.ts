@@ -52,3 +52,22 @@ export async function pickExportFolder(): Promise<string | null> {
   }
   return null;
 }
+
+/**
+ * Opens the native file picker for a Firebird backup (.fbk) file.
+ * Returns the selected file path, or null when cancelled.
+ */
+export async function pickBackupFile(): Promise<string | null> {
+  const last = getLastExportFolder();
+  const selected = await open({
+    directory: false,
+    multiple: false,
+    title: "Seleccionar respaldo (.fbk) a restaurar",
+    defaultPath: last ?? undefined,
+    filters: [{ name: "Respaldo Firebird", extensions: ["fbk"] }],
+  });
+  if (typeof selected === "string" && selected.trim()) {
+    return selected;
+  }
+  return null;
+}
