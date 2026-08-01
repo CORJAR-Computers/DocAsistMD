@@ -99,22 +99,6 @@ mod tests {
     }
 
     #[test]
-    fn set_and_load_roundtrip_persists_session() {
-        let _lock = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let _tmp = TempDir::new();
-        let _appdata = AppDataGuard::set(_tmp.path());
-
-        let state = SessionState::default();
-        let token = fresh_token();
-        set_session(&state, token.clone()).expect("set session");
-
-        // Un estado nuevo (como un reinicio de la app) recarga desde disco.
-        let reloaded = load_session_from_disk().expect("session should be on disk");
-        assert_eq!(reloaded.token, token);
-        assert!(session_file_path().exists());
-    }
-
-    #[test]
     fn in_memory_session_lifecycle() {
         let _lock = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let _tmp = TempDir::new();
@@ -124,11 +108,12 @@ mod tests {
         let token = fresh_token();
         set_session(&state, token.clone()).expect("set session");
 
-        // En memoria el token está activo.
+        // En memoria el token está activo durante la sesión.
         assert_eq!(current_token(&state).expect("valid token"), token);
 
-        // Al reiniciar la app (nuevo proceso / nuevo SessionState), la sesión no se restaura.
-        assert!(load_session_from_disk().is_none());
+        // Al reiniciar la app (nuevo proceso / nuevo SessionState), la sesión no se restaura de disco por seguridad.
+        let fresh_state = SessionState::default();
+        assert!(current_token(&fresh_state).is_err());
         assert!(!session_file_path().exists());
     }
 
@@ -144,7 +129,7 @@ mod tests {
 
         clear_session(&state).expect("clear session");
         assert!(current_token(&state).is_err(), "no session after clear");
-        assert!(load_session_from_disk().is_none(), "file removed after clear");
+        assert!(!session_file_path().exists(), "file removed after clear");
     }
 
     #[test]
