@@ -10,8 +10,8 @@ CREATE TABLE consultations (
     cie10_code VARCHAR(10),
     treatment_plan VARCHAR(2000),
     clinical_notes VARCHAR(3000),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT  NOT NULL,
+    updated_at TIMESTAMP DEFAULT  NOT NULL,
     FOREIGN KEY (appointment_id) REFERENCES appointments(id),
     FOREIGN KEY (patient_id) REFERENCES patients(id),
     FOREIGN KEY (doctor_id) REFERENCES doctors(id)

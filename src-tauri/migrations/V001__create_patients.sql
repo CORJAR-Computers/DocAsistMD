@@ -4,9 +4,9 @@ CREATE TABLE patients (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     document_id VARCHAR(50) NOT NULL,
-    document_type VARCHAR(10) NOT NULL DEFAULT 'CC',
+    document_type VARCHAR(10) DEFAULT  NOT NULL,
     date_of_birth DATE NOT NULL,
-    gender VARCHAR(1) NOT NULL DEFAULT 'M',
+    gender VARCHAR(1) DEFAULT  NOT NULL,
     phone VARCHAR(20) NOT NULL,
     email VARCHAR(150),
     address VARCHAR(300),
@@ -18,8 +18,8 @@ CREATE TABLE patients (
     insurance_policy_number VARCHAR(50),
     insurance_expiry_date DATE,
     notes VARCHAR(1000),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT  NOT NULL,
+    updated_at TIMESTAMP DEFAULT  NOT NULL
 );
 
 CREATE UNIQUE INDEX idx_patients_document ON patients(document_id);

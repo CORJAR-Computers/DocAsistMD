@@ -5,13 +5,13 @@ CREATE TABLE medications (
     active_ingredient VARCHAR(200) NOT NULL,
     presentation VARCHAR(100) NOT NULL,
     concentration VARCHAR(100),
-    current_stock INTEGER NOT NULL DEFAULT 0,
-    minimum_stock INTEGER NOT NULL DEFAULT 10,
-    unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    current_stock INTEGER DEFAULT  NOT NULL,
+    minimum_stock INTEGER DEFAULT  NOT NULL,
+    unit_price DECIMAL(10,2) DEFAULT  NOT NULL,
     expiry_date DATE,
     supplier VARCHAR(150),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT  NOT NULL,
+    updated_at TIMESTAMP DEFAULT  NOT NULL
 );
 
 CREATE INDEX idx_medications_name ON medications(name);

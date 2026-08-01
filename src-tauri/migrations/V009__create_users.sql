@@ -5,11 +5,11 @@ CREATE TABLE users (
     password_hash VARCHAR(200) NOT NULL,
     full_name VARCHAR(150) NOT NULL,
     email VARCHAR(150),
-    role VARCHAR(20) NOT NULL DEFAULT 'receptionist',
-    status VARCHAR(20) NOT NULL DEFAULT 'active',
+    role VARCHAR(20) DEFAULT  NOT NULL,
+    status VARCHAR(20) DEFAULT  NOT NULL,
     last_login TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT  NOT NULL,
+    updated_at TIMESTAMP DEFAULT  NOT NULL
 );
 
 CREATE UNIQUE INDEX idx_users_username ON users(username);

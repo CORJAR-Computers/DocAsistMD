@@ -31,7 +31,7 @@ pub fn init_connection() -> Result<DbConnection, FbError> {
     builder.db_name(&db_path_str);
 
     println!("Attempting to connect to existing DB...");
-    let conn = match builder.connect() {
+    let mut conn: SimpleConnection = match builder.connect() {
         Ok(conn) => {
             println!("Successfully connected to existing DB.");
             conn.into()
@@ -40,14 +40,12 @@ pub fn init_connection() -> Result<DbConnection, FbError> {
             println!("Connection failed, attempting to create new DB. Error: {:?}", e);
             let conn = builder.create_database().map_err(|e| FbError::from(e))?;
             println!("Database created. Setting up simple connection...");
-            let mut simple_conn: SimpleConnection = conn.into();
-            println!("Running initial schema...");
-            run_initial_schema(&mut simple_conn)?;
-            println!("Initial schema completed.");
-            simple_conn
+            conn.into()
         }
     };
 
+    println!("Running initial schema and migrations...");
+    run_initial_schema(&mut conn)?;
     println!("Database initialized successfully.");
     Ok(conn)
 }
@@ -65,13 +63,20 @@ fn get_database_path() -> PathBuf {
 
 /// Create the schema_migrations tracking table if it doesn't exist
 fn ensure_migration_table(conn: &mut DbConnection) -> Result<(), FbError> {
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS schema_migrations (
-            version VARCHAR(10) NOT NULL PRIMARY KEY,
-            applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )",
+    let rows: Vec<(i32,)> = conn.query(
+        "SELECT 1 FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = 'SCHEMA_MIGRATIONS'",
         (),
-    )?;
+    ).unwrap_or_default();
+
+    if rows.is_empty() {
+        conn.execute(
+            "CREATE TABLE schema_migrations (
+                version VARCHAR(10) NOT NULL PRIMARY KEY,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+            )",
+            (),
+        )?;
+    }
     Ok(())
 }
 

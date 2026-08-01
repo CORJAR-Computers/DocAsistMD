@@ -7,7 +7,7 @@ CREATE TABLE prescriptions (
     frequency VARCHAR(100) NOT NULL,
     duration VARCHAR(100) NOT NULL,
     instructions VARCHAR(500),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT  NOT NULL,
     FOREIGN KEY (consultation_id) REFERENCES consultations(id),
     FOREIGN KEY (medication_id) REFERENCES medications(id)
 );
