@@ -8,7 +8,7 @@ CREATE TABLE audit_log (
     old_values VARCHAR(4000),
     new_values VARCHAR(4000),
     ip_address VARCHAR(45),
-    created_at TIMESTAMP DEFAULT  NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_audit_table ON audit_log(table_name);
