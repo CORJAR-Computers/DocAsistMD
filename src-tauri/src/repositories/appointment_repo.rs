@@ -93,6 +93,7 @@ pub fn get_all(conn: &mut DbConnection) -> Result<Vec<AppointmentWithNames>, App
 pub fn create(
     conn: &mut DbConnection,
     input: CreateAppointmentInput,
+    user_id: Option<&str>,
 ) -> Result<Appointment, AppError> {
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
@@ -126,20 +127,80 @@ pub fn create(
         )
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    rows.into_iter()
+    let appointment = rows
+        .into_iter()
         .map(map_appointment_row)
         .next()
         .ok_or(AppError::Internal(
             "Failed to retrieve created appointment".to_string(),
-        ))
+        ))?;
+
+    let new_values = format!(
+        "{{\"patient_id\":\"{}\",\"doctor_id\":\"{}\",\"date_time\":\"{}\",\"duration_minutes\":{},\"appointment_type\":\"{}\",\"status\":\"{}\"}}",
+        crate::repositories::audit_repo::json_escape(&appointment.patient_id),
+        crate::repositories::audit_repo::json_escape(&appointment.doctor_id),
+        crate::repositories::audit_repo::json_escape(&appointment.date_time),
+        appointment.duration_minutes,
+        crate::repositories::audit_repo::json_escape(&appointment.appointment_type),
+        crate::repositories::audit_repo::json_escape(&appointment.status),
+    );
+    crate::repositories::audit_repo::log(
+        conn,
+        user_id,
+        "crear_cita",
+        "appointments",
+        Some(&id),
+        None,
+        Some(&new_values),
+    )?;
+
+    Ok(appointment)
 }
 
-pub fn update_status(conn: &mut DbConnection, id: &str, status: &str) -> Result<(), AppError> {
+pub fn update_status(
+    conn: &mut DbConnection,
+    id: &str,
+    status: &str,
+    user_id: Option<&str>,
+) -> Result<(), AppError> {
     let now = Utc::now().to_rfc3339();
+
+    // Capture previous status for the audit log before updating
+    let old_rows: Vec<(String,)> = conn
+        .query(
+            "SELECT status FROM appointments WHERE id = ?",
+            (id,),
+        )
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let old_status = old_rows
+        .into_iter()
+        .next()
+        .ok_or_else(|| AppError::NotFound(format!("Cita {} no encontrada", id)))?
+        .0;
+
     conn.execute(
         "UPDATE appointments SET status = ?, updated_at = ? WHERE id = ?",
         (status, &now, id),
     )
     .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let old_values = format!(
+        "{{\"status\":\"{}\"}}",
+        crate::repositories::audit_repo::json_escape(&old_status)
+    );
+    let new_values = format!(
+        "{{\"status\":\"{}\"}}",
+        crate::repositories::audit_repo::json_escape(status)
+    );
+    crate::repositories::audit_repo::log(
+        conn,
+        user_id,
+        "editar_cita",
+        "appointments",
+        Some(id),
+        Some(&old_values),
+        Some(&new_values),
+    )?;
+
     Ok(())
 }

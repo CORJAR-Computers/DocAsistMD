@@ -5,10 +5,10 @@ export interface Doctor {
   specialty: string;
   licenseNumber: string;
   phone: string;
-  email: string;
+  email: string | null;
   scheduleStart: string;
   scheduleEnd: string;
-  workingDays: number[];
+  workingDays: string;
   status: DoctorStatus;
   createdAt: string;
   updatedAt: string;

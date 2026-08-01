@@ -66,3 +66,23 @@ pub fn get_by_id(conn: &mut DbConnection, id: &str) -> Result<Doctor, AppError> 
         .next()
         .ok_or(AppError::NotFound(format!("Doctor {} not found", id)))
 }
+
+pub fn create(conn: &mut DbConnection, input: crate::models::CreateDoctorInput) -> Result<Doctor, AppError> {
+    use rsfbclient::Execute;
+    use uuid::Uuid;
+    use chrono::Utc;
+
+    let id = Uuid::new_v4().to_string();
+    let now = Utc::now().to_rfc3339();
+
+    conn.execute(
+        "INSERT INTO doctors (id, first_name, last_name, specialty, license_number, phone, email,
+         schedule_start, schedule_end, working_days, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '[1,2,3,4,5]', 'active', ?, ?)",
+        (&id, &input.first_name, &input.last_name, &input.specialty,
+         &input.license_number, &input.phone, &input.email,
+         &input.schedule_start, &input.schedule_end, &now, &now),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    get_by_id(conn, &id)
+}

@@ -4,8 +4,9 @@ import type { Appointment, CreateAppointmentInput, AppointmentStatus } from "@/t
 export const appointmentService = {
   getAll: () => apiCall<Appointment[]>("get_appointments"),
 
-  create: (input: CreateAppointmentInput) => apiCall<void>("create_appointment", { input }),
+  create: (input: CreateAppointmentInput, userId?: string) =>
+    apiCall<void>("create_appointment", userId ? { input, userId } : { input }),
 
-  updateStatus: (id: string, status: AppointmentStatus) =>
-    apiCall<void>("update_appointment_status", { id, status }),
+  updateStatus: (id: string, status: AppointmentStatus, userId?: string) =>
+    apiCall<void>("update_appointment_status", userId ? { id, status, userId } : { id, status }),
 };

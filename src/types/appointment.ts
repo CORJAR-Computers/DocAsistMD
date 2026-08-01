@@ -7,9 +7,9 @@ export interface Appointment {
   dateTime: string;
   durationMinutes: number;
   status: AppointmentStatus;
-  type: AppointmentType;
-  reason: string;
-  notes: string;
+  appointmentType: AppointmentType;
+  reason: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,7 +22,7 @@ export interface CreateAppointmentInput {
   doctorId: string;
   dateTime: string;
   durationMinutes: number;
-  type: AppointmentType;
+  appointmentType: AppointmentType;
   reason: string;
   notes?: string;
 }
@@ -51,4 +51,13 @@ export const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
   emergency: "Urgencia",
   procedure: "Procedimiento",
   telemedicine: "Telemedicina",
+};
+
+export const APPOINTMENT_STATUS_BADGE: Record<AppointmentStatus, "success" | "info" | "warning" | "secondary" | "danger"> = {
+  scheduled: "info",
+  confirmed: "success",
+  in_progress: "warning",
+  completed: "secondary",
+  cancelled: "danger",
+  no_show: "secondary",
 };

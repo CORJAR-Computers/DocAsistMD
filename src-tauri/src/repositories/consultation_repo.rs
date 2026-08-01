@@ -53,14 +53,30 @@ pub fn create(conn: &mut DbConnection, input: CreateConsultationInput) -> Result
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
 
+    // Lookup patient_id and doctor_id from the appointment
+    let appt_rows: Vec<(String, String)> = conn.query(
+        "SELECT patient_id, doctor_id FROM appointments WHERE id = ?",
+        (&input.appointment_id,),
+    ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    let (patient_id, doctor_id) = appt_rows.into_iter().next()
+        .ok_or(AppError::NotFound("Cita no encontrada".to_string()))?;
+
     conn.execute(
         "INSERT INTO consultations (id, appointment_id, patient_id, doctor_id,
          vital_signs, symptoms, diagnosis, cie10_code, treatment_plan, clinical_notes, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (&id, &input.appointment_id, &input.patient_id, &input.doctor_id,
+        (&id, &input.appointment_id, &patient_id, &doctor_id,
          &input.vital_signs, &input.symptoms, &input.diagnosis, &input.cie10_code,
          &input.treatment_plan, &input.clinical_notes, &now, &now),
     ).map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Mark the associated appointment as completed
+    conn.execute(
+        "UPDATE appointments SET status = 'completed', updated_at = ? WHERE id = ?",
+        (&now, &input.appointment_id),
+    )
+    .map_err(|e| AppError::Database(e.to_string()))?;
 
     get_by_id(conn, &id)
 }

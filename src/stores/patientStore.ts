@@ -44,7 +44,7 @@ export const usePatientStore = create<PatientState>((set, get) => ({
         p.lastName.toLowerCase().includes(q) ||
         p.documentId.includes(q) ||
         p.phone.includes(q) ||
-        p.email.toLowerCase().includes(q)
+        (p.email || "").toLowerCase().includes(q)
     );
   },
 }));

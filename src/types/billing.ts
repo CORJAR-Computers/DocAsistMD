@@ -1,6 +1,6 @@
 export interface Invoice {
   id: string;
-  appointmentId: string;
+  appointmentId: string | null;
   patientId: string;
   patientName: string;
   subtotal: number;
@@ -8,8 +8,41 @@ export interface Invoice {
   taxAmount: number;
   total: number;
   status: PaymentStatus;
-  paymentMethod: PaymentMethod;
-  dueDate: string;
+  paymentMethod: PaymentMethod | null;
+  dueDate: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+export interface CreateInvoiceInput {
+  patientId: string;
+  appointmentId?: string | null;
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  paymentMethod?: string | null;
+  dueDate?: string | null;
+}
+
+export interface InvoiceDetail {
+  id: string;
+  appointmentId: string | null;
+  patientId: string;
+  patientName: string;
+  patientDocument: string | null;
+  patientPhone: string | null;
+  patientEmail: string | null;
+  patientAddress: string | null;
+  doctorName: string | null;
+  appointmentDateTime: string | null;
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  status: PaymentStatus;
+  paymentMethod: PaymentMethod | null;
+  dueDate: string | null;
   paidAt: string | null;
   createdAt: string;
 }

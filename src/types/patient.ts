@@ -7,16 +7,16 @@ export interface Patient {
   dateOfBirth: string;
   gender: Gender;
   phone: string;
-  email: string;
-  address: string;
-  bloodType: string;
-  allergies: string;
-  emergencyContactName: string;
-  emergencyContactPhone: string;
-  insuranceProvider: string;
-  insurancePolicyNumber: string;
-  insuranceExpiryDate: string;
-  notes: string;
+  email: string | null;
+  address: string | null;
+  bloodType: string | null;
+  allergies: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  insuranceProvider: string | null;
+  insurancePolicyNumber: string | null;
+  insuranceExpiryDate: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }

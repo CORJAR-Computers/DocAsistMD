@@ -33,6 +33,20 @@ type PatientPart2 = (
     String,
 );
 
+/// Compact JSON summary of a patient used in the audit log new/old values.
+fn patient_summary(p: &Patient) -> String {
+    format!(
+        "{{\"id\":\"{}\",\"first_name\":\"{}\",\"last_name\":\"{}\",\"document_id\":\"{}\",\"document_type\":\"{}\",\"email\":\"{}\",\"phone\":\"{}\"}}",
+        p.id,
+        crate::repositories::audit_repo::json_escape(&p.first_name),
+        crate::repositories::audit_repo::json_escape(&p.last_name),
+        crate::repositories::audit_repo::json_escape(&p.document_id),
+        crate::repositories::audit_repo::json_escape(&p.document_type),
+        crate::repositories::audit_repo::json_escape(&p.email),
+        crate::repositories::audit_repo::json_escape(&p.phone),
+    )
+}
+
 fn merge_patient(p1: PatientPart1, p2: PatientPart2) -> Patient {
     Patient {
         id: p1.0,
@@ -115,7 +129,11 @@ pub fn get_by_id(conn: &mut DbConnection, id: &str) -> Result<Patient, AppError>
     Ok(merge_patient(r1, r2))
 }
 
-pub fn create(conn: &mut DbConnection, input: CreatePatientInput) -> Result<Patient, AppError> {
+pub fn create(
+    conn: &mut DbConnection,
+    input: CreatePatientInput,
+    user_id: Option<&str>,
+) -> Result<Patient, AppError> {
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
 
@@ -154,7 +172,20 @@ pub fn create(conn: &mut DbConnection, input: CreatePatientInput) -> Result<Pati
     )
     .map_err(|e| AppError::Database(e.to_string()))?;
 
-    get_by_id(conn, &id)
+    let patient = get_by_id(conn, &id)?;
+
+    let new_values = patient_summary(&patient);
+    crate::repositories::audit_repo::log(
+        conn,
+        user_id,
+        "crear_paciente",
+        "patients",
+        Some(&id),
+        None,
+        Some(&new_values),
+    )?;
+
+    Ok(patient)
 }
 
 pub fn search(conn: &mut DbConnection, query: &str) -> Result<Vec<Patient>, AppError> {
@@ -193,8 +224,86 @@ pub fn search(conn: &mut DbConnection, query: &str) -> Result<Vec<Patient>, AppE
     Ok(patients)
 }
 
-pub fn delete(conn: &mut DbConnection, id: &str) -> Result<(), AppError> {
+pub fn update(
+    conn: &mut DbConnection,
+    id: &str,
+    input: CreatePatientInput,
+    user_id: Option<&str>,
+) -> Result<Patient, AppError> {
+    let now = Utc::now().to_rfc3339();
+
+    // Capture previous state for the audit log before updating
+    let old = get_by_id(conn, id)?;
+
+    // Update first 14 columns + id (within rsfbclient's 15-param limit)
+    conn.execute(
+        "UPDATE patients SET
+            first_name = ?, last_name = ?, document_id = ?, document_type = ?,
+            date_of_birth = ?, gender = ?, phone = ?, email = ?, address = ?,
+            blood_type = ?, allergies = ?, emergency_contact_name = ?,
+            emergency_contact_phone = ?, insurance_provider = ?
+         WHERE id = ?",
+        (
+            &input.first_name, &input.last_name, &input.document_id, &input.document_type,
+            &input.date_of_birth, &input.gender, &input.phone, &input.email, &input.address,
+            &input.blood_type, &input.allergies, &input.emergency_contact_name,
+            &input.emergency_contact_phone, &input.insurance_provider, &id,
+        ),
+    )
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Update remaining columns
+    conn.execute(
+        "UPDATE patients SET
+            insurance_policy_number = ?,
+            insurance_expiry_date = ?,
+            notes = ?,
+            updated_at = ?
+         WHERE id = ?",
+        (
+            &input.insurance_policy_number,
+            &input.insurance_expiry_date,
+            &input.notes,
+            &now,
+            &id,
+        ),
+    )
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let patient = get_by_id(conn, id)?;
+
+    let old_values = patient_summary(&old);
+    let new_values = patient_summary(&patient);
+    crate::repositories::audit_repo::log(
+        conn,
+        user_id,
+        "editar_paciente",
+        "patients",
+        Some(id),
+        Some(&old_values),
+        Some(&new_values),
+    )?;
+
+    Ok(patient)
+}
+
+pub fn delete(conn: &mut DbConnection, id: &str, user_id: Option<&str>) -> Result<(), AppError> {
+    // Capture previous state for the audit log before deleting
+    let patient = get_by_id(conn, id)?;
+
     conn.execute("DELETE FROM patients WHERE id = ?", (id,))
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let old_values = patient_summary(&patient);
+    crate::repositories::audit_repo::log(
+        conn,
+        user_id,
+        "eliminar_paciente",
+        "patients",
+        Some(id),
+        Some(&old_values),
+        None,
+    )?;
+
     Ok(())
 }

@@ -35,3 +35,9 @@ impl From<rsfbclient::FbError> for AppError {
         AppError::Database(err.to_string())
     }
 }
+
+impl From<rust_xlsxwriter::XlsxError> for AppError {
+    fn from(err: rust_xlsxwriter::XlsxError) -> Self {
+        AppError::Internal(format!("Error de Excel: {}", err))
+    }
+}
