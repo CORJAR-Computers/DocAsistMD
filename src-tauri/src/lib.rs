@@ -1,5 +1,6 @@
 mod audit_export;
 mod commands;
+mod crypto;
 mod db;
 mod errors;
 mod exports;

@@ -46,6 +46,8 @@ fn patient_summary(p: &Patient) -> String {
     )
 }
 
+use crate::crypto::{decrypt_field, encrypt_field};
+
 fn merge_patient(p1: PatientPart1, p2: PatientPart2) -> Patient {
     Patient {
         id: p1.0,
@@ -59,13 +61,13 @@ fn merge_patient(p1: PatientPart1, p2: PatientPart2) -> Patient {
         email: p1.8,
         address: p1.9,
         blood_type: p1.10,
-        allergies: p1.11,
+        allergies: decrypt_field(p1.11),
         emergency_contact_name: p1.12,
         emergency_contact_phone: p1.13,
         insurance_provider: p1.14,
         insurance_policy_number: p2.0,
         insurance_expiry_date: p2.1,
-        notes: p2.2,
+        notes: decrypt_field(p2.2),
         created_at: p2.3,
         updated_at: p2.4,
     }
@@ -136,6 +138,9 @@ pub fn create(
     let id = Uuid::new_v4().to_string();
     let now = crate::db::now_timestamp();
 
+    let allergies_enc = encrypt_field(input.allergies.as_deref());
+    let notes_enc = encrypt_field(input.notes.as_deref());
+
     // Insert first 15 columns to stay within rsfbclient parameter tuple limit
     conn.execute(
         "INSERT INTO patients (
@@ -146,7 +151,7 @@ pub fn create(
         (
             &id, &input.first_name, &input.last_name, &input.document_id, &input.document_type,
             &input.date_of_birth, &input.gender, &input.phone, &input.email, &input.address,
-            &input.blood_type, &input.allergies, &input.emergency_contact_name,
+            &input.blood_type, &allergies_enc, &input.emergency_contact_name,
             &input.emergency_contact_phone, &input.insurance_provider,
         ),
     ).map_err(|e| AppError::Database(e.to_string()))?;
@@ -163,7 +168,7 @@ pub fn create(
         (
             &input.insurance_policy_number,
             &input.insurance_expiry_date,
-            &input.notes,
+            &notes_enc,
             &now,
             &now,
             &id,
@@ -234,6 +239,9 @@ pub fn update(
     // Capture previous state for the audit log before updating
     let old = get_by_id(conn, id)?;
 
+    let allergies_enc = encrypt_field(input.allergies.as_deref());
+    let notes_enc = encrypt_field(input.notes.as_deref());
+
     // Update first 14 columns + id (within rsfbclient's 15-param limit)
     conn.execute(
         "UPDATE patients SET
@@ -245,7 +253,7 @@ pub fn update(
         (
             &input.first_name, &input.last_name, &input.document_id, &input.document_type,
             &input.date_of_birth, &input.gender, &input.phone, &input.email, &input.address,
-            &input.blood_type, &input.allergies, &input.emergency_contact_name,
+            &input.blood_type, &allergies_enc, &input.emergency_contact_name,
             &input.emergency_contact_phone, &input.insurance_provider, &id,
         ),
     )
@@ -262,7 +270,7 @@ pub fn update(
         (
             &input.insurance_policy_number,
             &input.insurance_expiry_date,
-            &input.notes,
+            &notes_enc,
             &now,
             &id,
         ),
