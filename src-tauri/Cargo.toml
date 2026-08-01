@@ -1,0 +1,26 @@
+[package]
+name = "docasist-md"
+version = "0.1.0"
+description = "DocAsistMD - Medical Office Management Desktop Application"
+authors = ["DocAsistMD Team"]
+edition = "2021"
+
+[lib]
+name = "docasist_md_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+rsfbclient = { version = "0.26", features = ["linking"] }
+thiserror = "1"
+log = "0.4"
+ring = "0.17"
+hex = "0.4"
