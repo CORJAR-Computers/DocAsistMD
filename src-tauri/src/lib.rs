@@ -34,10 +34,10 @@ pub fn run() {
     };
 
     println!("Building Tauri application...");
-    // Sesión persistida del último arranque (se recarga y valida en Rust).
-    let session_state = session::SessionState {
-        current: std::sync::Mutex::new(session::load_session_from_disk()),
-    };
+    // Sesión estrictamente en memoria (se destruye al cerrar la app para evitar riesgos de seguridad)
+    let session_state = session::SessionState::default();
+    // Limpiar cualquier archivo de sesión antiguo que pudiera existir en disco
+    let _ = std::fs::remove_file(session::session_file_path());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
