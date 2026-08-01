@@ -1,6 +1,6 @@
 [package]
 name = "docasist-md"
-version = "0.1.0"
+version = "1.0.0"
 description = "DocAsistMD - Medical Office Management Desktop Application"
 authors = ["DocAsistMD Team"]
 edition = "2021"
