@@ -1,8 +1,8 @@
-mod db;
-mod models;
-mod errors;
-mod repositories;
 mod commands;
+mod db;
+mod errors;
+mod models;
+mod repositories;
 
 use db::DbState;
 
@@ -14,7 +14,7 @@ pub fn run() {
         Ok(conn) => {
             println!("Connection obtained in main.");
             conn
-        },
+        }
         Err(e) => {
             eprintln!("Failed to initialize database: {}", e);
             std::process::exit(1);
@@ -32,38 +32,15 @@ pub fn run() {
             commands::patient_commands::get_patients,
             commands::patient_commands::get_patient,
             commands::patient_commands::create_patient,
-            commands::patient_commands::update_patient,
             commands::patient_commands::search_patients,
             commands::patient_commands::delete_patient,
-            // Doctor commands
-            commands::doctor_commands::get_doctors,
-            commands::doctor_commands::get_doctor,
-            commands::doctor_commands::create_doctor,
-            commands::doctor_commands::update_doctor,
-            commands::doctor_commands::delete_doctor,
             // Appointment commands
             commands::appointment_commands::get_appointments,
             commands::appointment_commands::create_appointment,
             commands::appointment_commands::update_appointment_status,
-            // Consultation commands
-            commands::consultation_commands::get_consultations,
-            commands::consultation_commands::get_consultation,
-            commands::consultation_commands::get_patient_consultations,
-            commands::consultation_commands::create_consultation,
-            // Invoice commands
-            commands::invoice_commands::get_invoices,
-            commands::invoice_commands::get_invoice,
-            commands::invoice_commands::create_invoice,
-            commands::invoice_commands::update_invoice_status,
-            // Medication commands
-            commands::medication_commands::get_medications,
-            commands::medication_commands::get_medication,
-            commands::medication_commands::create_medication,
-            commands::medication_commands::update_medication_stock,
-            commands::medication_commands::get_low_stock_medications,
-            // Prescription commands
-            commands::prescription_commands::get_consultation_prescriptions,
-            commands::prescription_commands::create_prescription,
+            // Doctor commands
+            commands::doctor_commands::get_doctors,
+            commands::doctor_commands::get_doctor,
             // Auth commands
             commands::auth_commands::login,
             commands::auth_commands::get_current_user,

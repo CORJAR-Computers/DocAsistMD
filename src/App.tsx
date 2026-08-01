@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
@@ -10,8 +10,6 @@ import Appointments from "@/pages/Appointments";
 import Doctors from "@/pages/Doctors";
 import Billing from "@/pages/Billing";
 import Settings from "@/pages/Settings";
-import Consultations from "@/pages/Consultations";
-import Medications from "@/pages/Medications";
 import { useAuthStore } from "@/stores/authStore";
 import "./index.css";
 
@@ -24,41 +22,45 @@ const queryClient = new QueryClient({
   },
 });
 
-function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, checkAuth } = useAuthStore();
+function App() {
+  const { isAuthenticated, initAuth } = useAuthStore();
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    initAuth().finally(() => setInitializing(false));
+  }, [initAuth]);
 
-  if (!isAuthenticated) {
-    return <Login />;
+  if (initializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F2B3D] via-[#1B6B93] to-[#4FC0D0]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-white/70 text-sm">Cargando DocAsistMD...</p>
+        </div>
+      </div>
+    );
   }
 
-  return <>{children}</>;
-}
-
-function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthGuard>
-          <Routes>
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/patients" element={<Patients />} />
-              <Route path="/patients/new" element={<PatientForm />} />
-              <Route path="/patients/edit/:id" element={<PatientForm />} />
-              <Route path="/appointments" element={<Appointments />} />
-              <Route path="/doctors" element={<Doctors />} />
-              <Route path="/billing" element={<Billing />} />
-              <Route path="/consultations" element={<Consultations />} />
-              <Route path="/medications" element={<Medications />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </AuthGuard>
+        <Routes>
+          <Route path="/login" element={
+            isAuthenticated ? <Navigate to="/" replace /> : <Login />
+          } />
+          <Route element={
+            isAuthenticated ? <MainLayout /> : <Navigate to="/login" replace />
+          }>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/patients" element={<Patients />} />
+            <Route path="/patients/new" element={<PatientForm />} />
+            <Route path="/appointments" element={<Appointments />} />
+            <Route path="/doctors" element={<Doctors />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
       </BrowserRouter>
     </QueryClientProvider>
   );
