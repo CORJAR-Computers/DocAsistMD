@@ -1,8 +1,8 @@
-mod db;
-mod models;
-mod errors;
-mod repositories;
 mod commands;
+mod db;
+mod errors;
+mod models;
+mod repositories;
 
 use db::DbState;
 
@@ -14,7 +14,7 @@ pub fn run() {
         Ok(conn) => {
             println!("Connection obtained in main.");
             conn
-        },
+        }
         Err(e) => {
             eprintln!("Failed to initialize database: {}", e);
             std::process::exit(1);
@@ -38,9 +38,15 @@ pub fn run() {
             commands::appointment_commands::get_appointments,
             commands::appointment_commands::create_appointment,
             commands::appointment_commands::update_appointment_status,
+            // Doctor commands
+            commands::doctor_commands::get_doctors,
+            commands::doctor_commands::get_doctor,
             // Auth commands
             commands::auth_commands::login,
             commands::auth_commands::get_current_user,
+            commands::auth_commands::create_user,
+            commands::auth_commands::get_users,
+            commands::auth_commands::change_password,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

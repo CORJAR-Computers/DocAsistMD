@@ -132,3 +132,63 @@ pub struct LoginResponse {
     pub user: User,
     pub token: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateUserInput {
+    pub username: String,
+    pub password: String,
+    pub full_name: String,
+    pub email: String,
+    pub role: String,
+}
+
+// ── Consultation ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Consultation {
+    pub id: String,
+    pub appointment_id: String,
+    pub patient_id: String,
+    pub doctor_id: String,
+    pub vital_signs: Option<String>,
+    pub symptoms: Option<String>,
+    pub diagnosis: Option<String>,
+    pub cie10_code: Option<String>,
+    pub treatment_plan: Option<String>,
+    pub clinical_notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ── Medication ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Medication {
+    pub id: String,
+    pub name: String,
+    pub active_ingredient: String,
+    pub presentation: String,
+    pub concentration: Option<String>,
+    pub current_stock: i32,
+    pub minimum_stock: i32,
+    pub unit_price: f64,
+    pub expiry_date: Option<String>,
+    pub supplier: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ── Invoice ──
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Invoice {
+    pub id: String,
+    pub appointment_id: Option<String>,
+    pub patient_id: String,
+    pub subtotal: f64,
+    pub tax_rate: f64,
+    pub tax_amount: f64,
+    pub total: f64,
+    pub status: String,
+    pub payment_method: Option<String>,
+    pub due_date: Option<String>,
+    pub paid_at: Option<String>,
+    pub created_at: String,
+}
