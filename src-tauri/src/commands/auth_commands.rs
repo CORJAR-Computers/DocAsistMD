@@ -53,8 +53,7 @@ fn validate_token(token: &str) -> Result<String, AppError> {
     let payload = format!("{}:{}", user_id, timestamp);
     let expected_sig = hash_password(&format!("{}:DocAsistMD_Secret2026", payload));
     let expected_short = &expected_sig[..16];
-    use ring::constant_time::verify_slices_are_equal;
-    if verify_slices_are_equal(parts[2].as_bytes(), expected_short.as_bytes()).is_err() {
+    if parts[2] != expected_short {
         return Err(AppError::Auth("Token invalido".to_string()));
     }
     Ok(user_id.to_string())

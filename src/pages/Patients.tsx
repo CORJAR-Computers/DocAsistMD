@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  ClipboardList,
 } from "lucide-react";
 
 // Mock data for demo
@@ -175,10 +176,17 @@ export default function Patients() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => alert("Modulo de edicion en desarrollo")}>
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8"
+                          title="Historia Clínica"
+                          onClick={() => navigate(`/patients/${patient.id}/history`)}
+                        >
+                          <ClipboardList className="w-4 h-4 text-primary" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => alert("Módulo de edición en desarrollo")}>
                           <Edit2 className="w-4 h-4 text-text-light" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Eliminar" onClick={() => alert("Modulo de eliminacion en desarrollo")}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Eliminar" onClick={() => alert("Módulo de eliminación en desarrollo")}>
                           <Trash2 className="w-4 h-4 text-danger" />
                         </Button>
                       </div>

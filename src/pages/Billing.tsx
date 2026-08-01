@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { PAYMENT_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/types/billing";
 import type { Invoice } from "@/types/billing";
 import { Receipt, DollarSign, TrendingUp, AlertCircle, Plus } from "lucide-react";
+import NewInvoiceModal from "@/components/modals/NewInvoiceModal";
 
 const mockInvoices: Invoice[] = [
   { id: "INV-001", appointmentId: "1", patientId: "1", patientName: "Maria Garcia", subtotal: 80000, taxRate: 0.19, taxAmount: 15200, total: 95200, status: "paid", paymentMethod: "insurance", dueDate: "2026-08-01", paidAt: "2026-08-01T09:00:00Z", createdAt: "2026-08-01T08:00:00Z" },
@@ -16,6 +18,7 @@ const mockInvoices: Invoice[] = [
 const fmt = (n: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
 
 export default function Billing() {
+  const [showModal, setShowModal] = useState(false);
   const paid = mockInvoices.filter(i => i.status === "paid").reduce((s, i) => s + i.total, 0);
   const pending = mockInvoices.filter(i => i.status === "pending" || i.status === "overdue").reduce((s, i) => s + i.total, 0);
 
@@ -26,7 +29,7 @@ export default function Billing() {
           <h1 className="text-2xl font-bold text-text">Facturacion</h1>
           <p className="text-sm text-text-light mt-1">Gestion de facturas y pagos</p>
         </div>
-        <Button className="gap-2" onClick={() => alert("Modulo de Facturacion en desarrollo")}><Plus className="w-4 h-4" /> Nueva Factura</Button>
+        <Button className="gap-2" onClick={() => setShowModal(true)}><Plus className="w-4 h-4" /> Nueva Factura</Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -83,6 +86,9 @@ export default function Billing() {
           </div>
         </CardContent>
       </Card>
+      {showModal && (
+        <NewInvoiceModal onClose={() => setShowModal(false)} onCreated={() => setShowModal(false)} />
+      )}
     </div>
   );
 }

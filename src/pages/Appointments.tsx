@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_COLORS, APPOINTMENT_TYPE_LABELS } from "@/types/appointment";
 import type { Appointment, AppointmentStatus } from "@/types/appointment";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, Plus, Filter } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, Plus } from "lucide-react";
+import NewAppointmentModal from "@/components/modals/NewAppointmentModal";
 
 const mockAppointments: Appointment[] = [
   { id: "1", patientId: "1", patientName: "Maria Garcia", doctorId: "1", doctorName: "Dr. Mendez", dateTime: "2026-08-01T08:00:00", durationMinutes: 30, status: "confirmed", type: "consultation", reason: "Dolor de cabeza persistente", notes: "", createdAt: "", updatedAt: "" },
@@ -22,6 +23,7 @@ const hours = Array.from({ length: 10 }, (_, i) => `${(i + 8).toString().padStar
 export default function Appointments() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | "all">("all");
+  const [showModal, setShowModal] = useState(false);
 
   const filtered = mockAppointments.filter((a) => {
     const statusMatch = filterStatus === "all" || a.status === filterStatus;
@@ -35,7 +37,7 @@ export default function Appointments() {
           <h1 className="text-2xl font-bold text-text">Agenda de Citas</h1>
           <p className="text-sm text-text-light mt-1">Gestione las citas del consultorio</p>
         </div>
-        <Button className="gap-2"><Plus className="w-4 h-4" /> Nueva Cita</Button>
+        <Button className="gap-2" onClick={() => setShowModal(true)}><Plus className="w-4 h-4" /> Nueva Cita</Button>
       </div>
 
       {/* Date & Filter Bar */}
@@ -103,6 +105,12 @@ export default function Appointments() {
           </div>
         </CardContent>
       </Card>
+      {showModal && (
+        <NewAppointmentModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => setShowModal(false)}
+        />
+      )}
     </div>
   );
 }

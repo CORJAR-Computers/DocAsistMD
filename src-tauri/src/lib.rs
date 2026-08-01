@@ -41,6 +41,24 @@ pub fn run() {
             // Doctor commands
             commands::doctor_commands::get_doctors,
             commands::doctor_commands::get_doctor,
+            commands::doctor_commands::create_doctor,
+            // Consultation commands
+            commands::consultation_commands::get_consultations,
+            commands::consultation_commands::get_consultation,
+            commands::consultation_commands::get_patient_consultations,
+            commands::consultation_commands::create_consultation,
+            // Invoice commands
+            commands::invoice_commands::get_invoices,
+            commands::invoice_commands::get_invoice,
+            commands::invoice_commands::create_invoice,
+            commands::invoice_commands::update_invoice_status,
+            // Medication commands
+            commands::medication_commands::get_medications,
+            commands::medication_commands::create_medication,
+            commands::medication_commands::update_medication_stock,
+            // Prescription commands
+            commands::prescription_commands::get_consultation_prescriptions,
+            commands::prescription_commands::create_prescription,
             // Auth commands
             commands::auth_commands::login,
             commands::auth_commands::get_current_user,

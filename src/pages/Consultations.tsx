@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiCall } from "@/services/api";
-import { ClipboardList, Plus, User, Stethoscope } from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
+import NewConsultationModal from "@/components/modals/NewConsultationModal";
 
 interface Consultation {
   id: string; appointmentId: string; patientId: string; doctorId: string;
@@ -14,13 +15,16 @@ interface Consultation {
 export default function Consultations() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
     apiCall<Consultation[]>("get_consultations")
       .then(setConsultations)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
 
   return (
     <div className="space-y-6">
@@ -29,7 +33,7 @@ export default function Consultations() {
           <h1 className="text-2xl font-bold text-text">Historia Clínica</h1>
           <p className="text-sm text-text-light mt-1">{consultations.length} consultas registradas</p>
         </div>
-        <Button className="gap-2" onClick={() => alert("Módulo en desarrollo")}>
+        <Button className="gap-2" onClick={() => setShowModal(true)}>
           <Plus className="w-4 h-4" /> Nueva Consulta
         </Button>
       </div>
@@ -73,6 +77,12 @@ export default function Consultations() {
             </Card>
           ))}
         </div>
+      )}
+      {showModal && (
+        <NewConsultationModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => { setShowModal(false); load(); }}
+        />
       )}
     </div>
   );

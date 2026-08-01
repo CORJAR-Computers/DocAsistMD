@@ -65,7 +65,7 @@ fn ensure_migration_table(conn: &mut DbConnection) -> Result<(), FbError> {
     let result = conn.execute(
         "CREATE TABLE schema_migrations (\
          version VARCHAR(10) NOT NULL PRIMARY KEY,\
-         applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+         applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)",
         (),
     );
     match result {
@@ -199,8 +199,7 @@ pub fn hash_password(password: &str) -> String {
 
 pub fn verify_password(password: &str, hash: &str) -> bool {
     let computed = hash_password(password);
-    use ring::constant_time::verify_slices_are_equal;
-    verify_slices_are_equal(computed.as_bytes(), hash.as_bytes()).is_ok()
+    computed == hash
 }
 
 // ============================================================
@@ -210,171 +209,182 @@ pub fn verify_password(password: &str, hash: &str) -> bool {
 // ============================================================
 
 static MIGRATION_V001: &[&str] = &[
-    "CREATE TABLE patients (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        first_name VARCHAR(100) NOT NULL,\
-        last_name VARCHAR(100) NOT NULL,\
-        document_id VARCHAR(50) NOT NULL,\
-        document_type VARCHAR(10) NOT NULL DEFAULT 'CC',\
-        date_of_birth DATE NOT NULL,\
-        gender VARCHAR(1) NOT NULL DEFAULT 'M',\
-        phone VARCHAR(20) NOT NULL,\
-        email VARCHAR(150),\
-        address VARCHAR(300),\
-        blood_type VARCHAR(5),\
-        allergies VARCHAR(500),\
-        emergency_contact_name VARCHAR(150),\
-        emergency_contact_phone VARCHAR(20),\
-        insurance_provider VARCHAR(100),\
-        insurance_policy_number VARCHAR(50),\
-        insurance_expiry_date DATE,\
-        notes VARCHAR(1000),\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-    "CREATE UNIQUE INDEX idx_patients_document ON patients(document_id)",
-    "CREATE INDEX idx_patients_name ON patients(last_name, first_name)",
+    r#"CREATE TABLE patients (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    document_id VARCHAR(50) NOT NULL,
+    document_type VARCHAR(10) DEFAULT 'CC' NOT NULL,
+    date_of_birth DATE NOT NULL,
+    gender VARCHAR(1) DEFAULT 'M' NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(150),
+    address VARCHAR(300),
+    blood_type VARCHAR(5),
+    allergies VARCHAR(500),
+    emergency_contact_name VARCHAR(150),
+    emergency_contact_phone VARCHAR(20),
+    insurance_provider VARCHAR(100),
+    insurance_policy_number VARCHAR(50),
+    insurance_expiry_date DATE,
+    notes VARCHAR(1000),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+)"#,
+    r#"CREATE UNIQUE INDEX idx_patients_document ON patients(document_id)"#,
+    r#"CREATE INDEX idx_patients_name ON patients(last_name, first_name)"#
 ];
 
 static MIGRATION_V002: &[&str] = &[
-    "CREATE TABLE doctors (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        first_name VARCHAR(100) NOT NULL,\
-        last_name VARCHAR(100) NOT NULL,\
-        specialty VARCHAR(100) NOT NULL,\
-        license_number VARCHAR(50) NOT NULL,\
-        phone VARCHAR(20) NOT NULL,\
-        email VARCHAR(150),\
-        schedule_start VARCHAR(5) NOT NULL DEFAULT '08:00',\
-        schedule_end VARCHAR(5) NOT NULL DEFAULT '17:00',\
-        working_days VARCHAR(20) NOT NULL DEFAULT '[1,2,3,4,5]',\
-        status VARCHAR(20) NOT NULL DEFAULT 'active',\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-    "CREATE UNIQUE INDEX idx_doctors_license ON doctors(license_number)",
+    r#"CREATE TABLE doctors (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    specialty VARCHAR(100) NOT NULL,
+    license_number VARCHAR(50) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(150),
+    schedule_start VARCHAR(5) DEFAULT '08:00' NOT NULL,
+    schedule_end VARCHAR(5) DEFAULT '17:00' NOT NULL,
+    working_days VARCHAR(20) DEFAULT '[1,2,3,4,5]' NOT NULL,
+    status VARCHAR(20) DEFAULT 'active' NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+)"#,
+    r#"CREATE UNIQUE INDEX idx_doctors_license ON doctors(license_number)"#
 ];
 
 static MIGRATION_V003: &[&str] = &[
-    "CREATE TABLE appointments (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        patient_id VARCHAR(36) NOT NULL,\
-        doctor_id VARCHAR(36) NOT NULL,\
-        date_time TIMESTAMP NOT NULL,\
-        duration_minutes INTEGER NOT NULL DEFAULT 30,\
-        status VARCHAR(20) NOT NULL DEFAULT 'scheduled',\
-        appointment_type VARCHAR(20) NOT NULL DEFAULT 'consultation',\
-        reason VARCHAR(500),\
-        notes VARCHAR(1000),\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        FOREIGN KEY (patient_id) REFERENCES patients(id),\
-        FOREIGN KEY (doctor_id) REFERENCES doctors(id))",
-    "CREATE INDEX idx_appointments_date ON appointments(date_time)",
-    "CREATE INDEX idx_appointments_patient ON appointments(patient_id)",
-    "CREATE INDEX idx_appointments_doctor ON appointments(doctor_id)",
-    "CREATE INDEX idx_appointments_status ON appointments(status)",
+    r#"CREATE TABLE appointments (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    patient_id VARCHAR(36) NOT NULL,
+    doctor_id VARCHAR(36) NOT NULL,
+    date_time TIMESTAMP NOT NULL,
+    duration_minutes INTEGER DEFAULT 30 NOT NULL,
+    status VARCHAR(20) DEFAULT 'scheduled' NOT NULL,
+    appointment_type VARCHAR(20) DEFAULT 'consultation' NOT NULL,
+    reason VARCHAR(500),
+    notes VARCHAR(1000),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (patient_id) REFERENCES patients(id),
+    FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+)"#,
+    r#"CREATE INDEX idx_appointments_date ON appointments(date_time)"#,
+    r#"CREATE INDEX idx_appointments_patient ON appointments(patient_id)"#,
+    r#"CREATE INDEX idx_appointments_doctor ON appointments(doctor_id)"#,
+    r#"CREATE INDEX idx_appointments_status ON appointments(status)"#
 ];
 
 static MIGRATION_V004: &[&str] = &[
-    "CREATE TABLE consultations (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        appointment_id VARCHAR(36) NOT NULL,\
-        patient_id VARCHAR(36) NOT NULL,\
-        doctor_id VARCHAR(36) NOT NULL,\
-        vital_signs VARCHAR(500),\
-        symptoms VARCHAR(1000),\
-        diagnosis VARCHAR(500),\
-        cie10_code VARCHAR(10),\
-        treatment_plan VARCHAR(2000),\
-        clinical_notes VARCHAR(3000),\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        FOREIGN KEY (appointment_id) REFERENCES appointments(id),\
-        FOREIGN KEY (patient_id) REFERENCES patients(id),\
-        FOREIGN KEY (doctor_id) REFERENCES doctors(id))",
-    "CREATE INDEX idx_consultations_patient ON consultations(patient_id)",
-    "CREATE INDEX idx_consultations_date ON consultations(created_at)",
+    r#"CREATE TABLE consultations (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    appointment_id VARCHAR(36) NOT NULL,
+    patient_id VARCHAR(36) NOT NULL,
+    doctor_id VARCHAR(36) NOT NULL,
+    vital_signs VARCHAR(500),
+    symptoms VARCHAR(1000),
+    diagnosis VARCHAR(500),
+    cie10_code VARCHAR(10),
+    treatment_plan VARCHAR(2000),
+    clinical_notes VARCHAR(3000),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id),
+    FOREIGN KEY (patient_id) REFERENCES patients(id),
+    FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+)"#,
+    r#"CREATE INDEX idx_consultations_patient ON consultations(patient_id)"#,
+    r#"CREATE INDEX idx_consultations_date ON consultations(created_at)"#
 ];
 
 static MIGRATION_V005: &[&str] = &[
-    "CREATE TABLE prescriptions (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        consultation_id VARCHAR(36) NOT NULL,\
-        medication_id VARCHAR(36) NOT NULL,\
-        dosage VARCHAR(100) NOT NULL,\
-        frequency VARCHAR(100) NOT NULL,\
-        duration VARCHAR(100) NOT NULL,\
-        instructions VARCHAR(500),\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        FOREIGN KEY (consultation_id) REFERENCES consultations(id),\
-        FOREIGN KEY (medication_id) REFERENCES medications(id))",
-    "CREATE INDEX idx_prescriptions_consultation ON prescriptions(consultation_id)",
+    r#"CREATE TABLE prescriptions (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    consultation_id VARCHAR(36) NOT NULL,
+    medication_id VARCHAR(36) NOT NULL,
+    dosage VARCHAR(100) NOT NULL,
+    frequency VARCHAR(100) NOT NULL,
+    duration VARCHAR(100) NOT NULL,
+    instructions VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (consultation_id) REFERENCES consultations(id),
+    FOREIGN KEY (medication_id) REFERENCES medications(id)
+)"#,
+    r#"CREATE INDEX idx_prescriptions_consultation ON prescriptions(consultation_id)"#
 ];
 
 static MIGRATION_V006: &[&str] = &[
-    "CREATE TABLE invoices (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        appointment_id VARCHAR(36),\
-        patient_id VARCHAR(36) NOT NULL,\
-        subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,\
-        tax_rate DECIMAL(5,4) NOT NULL DEFAULT 0.1900,\
-        tax_amount DECIMAL(12,2) NOT NULL DEFAULT 0,\
-        total DECIMAL(12,2) NOT NULL DEFAULT 0,\
-        status VARCHAR(20) NOT NULL DEFAULT 'pending',\
-        payment_method VARCHAR(20),\
-        due_date DATE,\
-        paid_at TIMESTAMP,\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        FOREIGN KEY (appointment_id) REFERENCES appointments(id),\
-        FOREIGN KEY (patient_id) REFERENCES patients(id))",
-    "CREATE INDEX idx_invoices_patient ON invoices(patient_id)",
-    "CREATE INDEX idx_invoices_status ON invoices(status)",
+    r#"CREATE TABLE invoices (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    appointment_id VARCHAR(36),
+    patient_id VARCHAR(36) NOT NULL,
+    subtotal DECIMAL(12,2) DEFAULT 0 NOT NULL,
+    tax_rate DECIMAL(5,4) DEFAULT 0.1900 NOT NULL,
+    tax_amount DECIMAL(12,2) DEFAULT 0 NOT NULL,
+    total DECIMAL(12,2) DEFAULT 0 NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' NOT NULL,
+    payment_method VARCHAR(20),
+    due_date DATE,
+    paid_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id),
+    FOREIGN KEY (patient_id) REFERENCES patients(id)
+)"#,
+    r#"CREATE INDEX idx_invoices_patient ON invoices(patient_id)"#,
+    r#"CREATE INDEX idx_invoices_status ON invoices(status)"#
 ];
 
 static MIGRATION_V007: &[&str] = &[
-    "CREATE TABLE medications (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        name VARCHAR(200) NOT NULL,\
-        active_ingredient VARCHAR(200) NOT NULL,\
-        presentation VARCHAR(100) NOT NULL,\
-        concentration VARCHAR(100),\
-        current_stock INTEGER NOT NULL DEFAULT 0,\
-        minimum_stock INTEGER NOT NULL DEFAULT 10,\
-        unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,\
-        expiry_date DATE,\
-        supplier VARCHAR(150),\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-    "CREATE INDEX idx_medications_name ON medications(name)",
-    "CREATE INDEX idx_medications_stock ON medications(current_stock)",
+    r#"CREATE TABLE medications (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    active_ingredient VARCHAR(200) NOT NULL,
+    presentation VARCHAR(100) NOT NULL,
+    concentration VARCHAR(100),
+    current_stock INTEGER DEFAULT 0 NOT NULL,
+    minimum_stock INTEGER DEFAULT 10 NOT NULL,
+    unit_price DECIMAL(10,2) DEFAULT 0 NOT NULL,
+    expiry_date DATE,
+    supplier VARCHAR(150),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+)"#,
+    r#"CREATE INDEX idx_medications_name ON medications(name)"#,
+    r#"CREATE INDEX idx_medications_stock ON medications(current_stock)"#
 ];
 
 static MIGRATION_V008: &[&str] = &[
-    "CREATE TABLE audit_log (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        user_id VARCHAR(36),\
-        action VARCHAR(50) NOT NULL,\
-        table_name VARCHAR(50) NOT NULL,\
-        record_id VARCHAR(36),\
-        old_values VARCHAR(4000),\
-        new_values VARCHAR(4000),\
-        ip_address VARCHAR(45),\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-    "CREATE INDEX idx_audit_table ON audit_log(table_name)",
-    "CREATE INDEX idx_audit_user ON audit_log(user_id)",
-    "CREATE INDEX idx_audit_date ON audit_log(created_at)",
+    r#"CREATE TABLE audit_log (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    user_id VARCHAR(36),
+    action VARCHAR(50) NOT NULL,
+    table_name VARCHAR(50) NOT NULL,
+    record_id VARCHAR(36),
+    old_values VARCHAR(4000),
+    new_values VARCHAR(4000),
+    ip_address VARCHAR(45),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+)"#,
+    r#"CREATE INDEX idx_audit_table ON audit_log(table_name)"#,
+    r#"CREATE INDEX idx_audit_user ON audit_log(user_id)"#,
+    r#"CREATE INDEX idx_audit_date ON audit_log(created_at)"#
 ];
 
 static MIGRATION_V009: &[&str] = &[
-    "CREATE TABLE users (\
-        id VARCHAR(36) NOT NULL PRIMARY KEY,\
-        username VARCHAR(50) NOT NULL,\
-        password_hash VARCHAR(200) NOT NULL,\
-        full_name VARCHAR(150) NOT NULL,\
-        email VARCHAR(150),\
-        role VARCHAR(20) NOT NULL DEFAULT 'receptionist',\
-        status VARCHAR(20) NOT NULL DEFAULT 'active',\
-        last_login TIMESTAMP,\
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-    "CREATE UNIQUE INDEX idx_users_username ON users(username)",
+    r#"CREATE TABLE users (
+    id VARCHAR(36) NOT NULL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password_hash VARCHAR(200) NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(150),
+    role VARCHAR(20) DEFAULT 'receptionist' NOT NULL,
+    status VARCHAR(20) DEFAULT 'active' NOT NULL,
+    last_login TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+)"#,
+    r#"CREATE UNIQUE INDEX idx_users_username ON users(username)"#
 ];
+
+

@@ -1,6 +1,6 @@
 use crate::db::DbState;
 use crate::errors::AppError;
-use crate::models::Doctor;
+use crate::models::{Doctor, CreateDoctorInput};
 use crate::repositories::doctor_repo;
 use tauri::State;
 
@@ -20,4 +20,13 @@ pub fn get_doctor(state: State<DbState>, id: String) -> Result<Doctor, AppError>
         .lock()
         .map_err(|e| AppError::Internal(e.to_string()))?;
     doctor_repo::get_by_id(&mut conn, &id)
+}
+
+#[tauri::command]
+pub fn create_doctor(state: State<DbState>, input: CreateDoctorInput) -> Result<Doctor, AppError> {
+    let mut conn = state
+        .conn
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    doctor_repo::create(&mut conn, input)
 }

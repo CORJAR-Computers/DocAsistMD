@@ -1,30 +1,41 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Doctor } from "@/types/doctor";
 import { DOCTOR_STATUS_LABELS } from "@/types/doctor";
 import { UserPlus, Phone, Mail, Stethoscope, Clock } from "lucide-react";
-
-const mockDoctors: Doctor[] = [
-  { id: "1", firstName: "Carlos", lastName: "Mendez", specialty: "Medicina General", licenseNumber: "MED-12345", phone: "+57 300 111 2222", email: "carlos.mendez@docasistmd.com", scheduleStart: "08:00", scheduleEnd: "17:00", workingDays: [1,2,3,4,5], status: "active", createdAt: "", updatedAt: "" },
-  { id: "2", firstName: "Ana", lastName: "Torres", specialty: "Pediatria", licenseNumber: "MED-67890", phone: "+57 300 333 4444", email: "ana.torres@docasistmd.com", scheduleStart: "09:00", scheduleEnd: "18:00", workingDays: [1,2,3,4,5], status: "active", createdAt: "", updatedAt: "" },
-  { id: "3", firstName: "Roberto", lastName: "Herrera", specialty: "Cardiologia", licenseNumber: "MED-11223", phone: "+57 300 555 6666", email: "roberto.herrera@docasistmd.com", scheduleStart: "10:00", scheduleEnd: "16:00", workingDays: [1,3,5], status: "active", createdAt: "", updatedAt: "" },
-  { id: "4", firstName: "Lucia", lastName: "Fernandez", specialty: "Dermatologia", licenseNumber: "MED-44556", phone: "+57 300 777 8888", email: "lucia.fernandez@docasistmd.com", scheduleStart: "08:00", scheduleEnd: "14:00", workingDays: [2,4], status: "vacation", createdAt: "", updatedAt: "" },
-];
+import { apiCall } from "@/services/api";
+import NewDoctorModal from "@/components/modals/NewDoctorModal";
 
 export default function Doctors() {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const load = () => {
+    setLoading(true);
+    apiCall<Doctor[]>("get_doctors").then(setDoctors).catch(console.error).finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-text">Medicos</h1>
-          <p className="text-sm text-text-light mt-1">{mockDoctors.length} medicos registrados</p>
+          <p className="text-sm text-text-light mt-1">{loading ? "Cargando..." : `${doctors.length} médicos registrados`}</p>
         </div>
-        <Button className="gap-2" onClick={() => alert("Modulo de Medicos en desarrollo")}><UserPlus className="w-4 h-4" /> Nuevo Medico</Button>
+        <Button className="gap-2" onClick={() => setShowModal(true)}><UserPlus className="w-4 h-4" /> Nuevo Médico</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {mockDoctors.map((doc) => (
+        {loading ? (
+          <p className="text-text-muted text-sm col-span-2 text-center py-8">Cargando médicos...</p>
+        ) : doctors.length === 0 ? (
+          <p className="text-text-muted text-sm col-span-2 text-center py-8">No hay médicos registrados. ¡Agrega el primero!</p>
+        ) : doctors.map((doc) => (
           <Card key={doc.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
@@ -43,11 +54,13 @@ export default function Doctors() {
                     <div className="flex items-center gap-2 text-xs text-text-light">
                       <Phone className="w-3.5 h-3.5" /> {doc.phone}
                     </div>
+                    {doc.email && (
+                      <div className="flex items-center gap-2 text-xs text-text-light">
+                        <Mail className="w-3.5 h-3.5" /> {doc.email}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-xs text-text-light">
-                      <Mail className="w-3.5 h-3.5" /> {doc.email}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-text-light">
-                      <Clock className="w-3.5 h-3.5" /> {doc.scheduleStart} - {doc.scheduleEnd} | {doc.workingDays.map(d => ["Do","Lu","Ma","Mi","Ju","Vi","Sa"][d]).join(", ")}
+                      <Clock className="w-3.5 h-3.5" /> {doc.scheduleStart} - {doc.scheduleEnd}
                     </div>
                   </div>
                   <p className="text-xs text-text-muted mt-2">Licencia: {doc.licenseNumber}</p>
@@ -57,6 +70,13 @@ export default function Doctors() {
           </Card>
         ))}
       </div>
+
+      {showModal && (
+        <NewDoctorModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => { setShowModal(false); load(); }}
+        />
+      )}
     </div>
   );
 }
