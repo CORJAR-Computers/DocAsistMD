@@ -44,7 +44,7 @@ pub fn get_by_id(conn: &mut DbConnection, id: &str) -> Result<Medication, AppErr
 
 pub fn create(conn: &mut DbConnection, input: CreateMedicationInput) -> Result<Medication, AppError> {
     let id = Uuid::new_v4().to_string();
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     conn.execute(
         "INSERT INTO medications (id, name, active_ingredient, presentation, concentration,
@@ -131,9 +131,9 @@ pub fn get_movements(
         "SELECT * FROM (
             SELECT m.id, m.medication_id, med.name, m.movement_type, m.quantity,
                    m.reason, m.reference, m.created_at,
-                   CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
+                   TRIM(CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
                         WHEN pr.id IS NOT NULL AND m.movement_type = 'out' THEN 'receta'
-                        ELSE 'manual' END AS origin,
+                        ELSE 'manual' END) AS origin,
                    m.reversed_at
             FROM inventory_movements m
             JOIN medications med ON m.medication_id = med.id
@@ -160,9 +160,9 @@ pub fn get_dispensed_movements(
     let rows: Vec<MovementRow> = conn.query(
         "SELECT m.id, m.medication_id, med.name, m.movement_type, m.quantity,
                 m.reason, m.reference, m.created_at,
-                CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
+                TRIM(CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
                         WHEN pr.id IS NOT NULL AND m.movement_type = 'out' THEN 'receta'
-                        ELSE 'manual' END AS origin,
+                        ELSE 'manual' END) AS origin,
                 m.reversed_at
          FROM inventory_movements m
          JOIN medications med ON m.medication_id = med.id
@@ -187,9 +187,9 @@ pub fn get_movement_detail(
     let rows: Vec<MovementRow> = conn.query(
         "SELECT m.id, m.medication_id, med.name, m.movement_type, m.quantity,
                 m.reason, m.reference, m.created_at,
-                CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
+                TRIM(CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
                         WHEN pr.id IS NOT NULL AND m.movement_type = 'out' THEN 'receta'
-                        ELSE 'manual' END AS origin,
+                        ELSE 'manual' END) AS origin,
                 m.reversed_at
          FROM inventory_movements m
          JOIN medications med ON m.medication_id = med.id
@@ -209,9 +209,9 @@ pub fn get_movement_detail(
             let rows: Vec<MovementRow> = conn.query(
                 "SELECT m.id, m.medication_id, med.name, m.movement_type, m.quantity,
                         m.reason, m.reference, m.created_at,
-                        CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
+                        TRIM(CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
                         WHEN pr.id IS NOT NULL AND m.movement_type = 'out' THEN 'receta'
-                        ELSE 'manual' END AS origin,
+                        ELSE 'manual' END) AS origin,
                         m.reversed_at
                  FROM inventory_movements m
                  JOIN medications med ON m.medication_id = med.id
@@ -226,9 +226,9 @@ pub fn get_movement_detail(
             let rows: Vec<MovementRow> = conn.query(
                 "SELECT m.id, m.medication_id, med.name, m.movement_type, m.quantity,
                         m.reason, m.reference, m.created_at,
-                        CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
+                        TRIM(CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
                         WHEN pr.id IS NOT NULL AND m.movement_type = 'out' THEN 'receta'
-                        ELSE 'manual' END AS origin,
+                        ELSE 'manual' END) AS origin,
                         m.reversed_at
                  FROM inventory_movements m
                  JOIN medications med ON m.medication_id = med.id
@@ -295,7 +295,7 @@ pub fn reverse_dispense(
         ));
     }
 
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     conn.begin_transaction().map_err(|e| AppError::Database(e.to_string()))?;
     let result = (|| -> Result<(), AppError> {
@@ -383,7 +383,7 @@ pub fn record_movement(
         )));
     }
 
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
     let id = Uuid::new_v4().to_string();
 
     // Update stock (+ in, - out)
@@ -438,9 +438,9 @@ pub fn record_movement(
         let rows: Vec<MovementRow> = conn.query(
             "SELECT m.id, m.medication_id, med.name, m.movement_type, m.quantity,
                     m.reason, m.reference, m.created_at,
-                    CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
+                    TRIM(CASE WHEN m.reason = 'Reversión de dispensación' AND m.movement_type = 'in' THEN 'reversion'
                         WHEN pr.id IS NOT NULL AND m.movement_type = 'out' THEN 'receta'
-                        ELSE 'manual' END AS origin,
+                        ELSE 'manual' END) AS origin,
                     m.reversed_at
              FROM inventory_movements m
              JOIN medications med ON m.medication_id = med.id
@@ -462,5 +462,158 @@ pub fn record_movement(
             conn.rollback().map_err(|re| AppError::Database(re.to_string()))?;
             Err(e)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::TestDb;
+
+    fn sample_input(name: &str, stock: i32, min_stock: i32) -> CreateMedicationInput {
+        CreateMedicationInput {
+            name: name.to_string(),
+            active_ingredient: "Paracetamol".to_string(),
+            presentation: "Tabletas".to_string(),
+            concentration: Some("500 mg".to_string()),
+            current_stock: stock,
+            minimum_stock: min_stock,
+            unit_price: 1500.0,
+            expiry_date: None,
+            supplier: Some("Distribuidora X".to_string()),
+        }
+    }
+
+    #[test]
+    fn create_and_get_roundtrip() {
+        let mut db = TestDb::new().expect("create test db");
+
+        let created = create(db.conn(), sample_input("Paracetamol", 100, 10)).expect("create");
+        assert!(!created.id.is_empty());
+        assert_eq!(created.name, "Paracetamol");
+        assert_eq!(created.current_stock, 100);
+
+        let fetched = get_by_id(db.conn(), &created.id).expect("get by id");
+        assert_eq!(fetched.unit_price, 1500.0);
+    }
+
+    #[test]
+    fn get_low_stock_returns_only_low() {
+        let mut db = TestDb::new().expect("create test db");
+        create(db.conn(), sample_input("Aspirina", 5, 10)).expect("low");
+        create(db.conn(), sample_input("Ibuprofeno", 100, 10)).expect("ok");
+
+        let low = get_low_stock(db.conn()).expect("low stock");
+        assert!(low.iter().any(|m| m.name == "Aspirina"));
+        assert!(!low.iter().any(|m| m.name == "Ibuprofeno"));
+    }
+
+    #[test]
+    fn get_expiring_returns_soon_to_expire() {
+        let mut db = TestDb::new().expect("create test db");
+
+        let mut soon = sample_input("Vitamina C", 50, 5);
+        soon.expiry_date = Some(
+            (Utc::now().date_naive() + Duration::days(10)).format("%Y-%m-%d").to_string(),
+        );
+        create(db.conn(), soon).expect("create expiring");
+
+        let mut far = sample_input("Omeprazol", 50, 5);
+        far.expiry_date = Some(
+            (Utc::now().date_naive() + Duration::days(400)).format("%Y-%m-%d").to_string(),
+        );
+        create(db.conn(), far).expect("create not expiring");
+
+        let expiring = get_expiring(db.conn(), 30).expect("get expiring");
+        assert!(expiring.iter().any(|m| m.name == "Vitamina C"));
+        assert!(!expiring.iter().any(|m| m.name == "Omeprazol"));
+    }
+
+    #[test]
+    fn record_movement_in_increases_stock() {
+        let mut db = TestDb::new().expect("create test db");
+        let med = create(db.conn(), sample_input("Loratadina", 10, 5)).expect("create");
+
+        let input = CreateMovementInput {
+            medication_id: med.id.clone(),
+            movement_type: "in".to_string(),
+            quantity: 20,
+            reason: Some("Compra".to_string()),
+            reference: None,
+        };
+        record_movement(db.conn(), input, None).expect("record in");
+
+        let updated = get_by_id(db.conn(), &med.id).expect("get updated");
+        assert_eq!(updated.current_stock, 30);
+    }
+
+    #[test]
+    fn record_movement_out_decreases_stock() {
+        let mut db = TestDb::new().expect("create test db");
+        let med = create(db.conn(), sample_input("Diclofenaco", 10, 5)).expect("create");
+
+        let input = CreateMovementInput {
+            medication_id: med.id.clone(),
+            movement_type: "out".to_string(),
+            quantity: 4,
+            reason: Some("Salida manual".to_string()),
+            reference: None,
+        };
+        record_movement(db.conn(), input, None).expect("record out");
+
+        let updated = get_by_id(db.conn(), &med.id).expect("get updated");
+        assert_eq!(updated.current_stock, 6);
+    }
+
+    #[test]
+    fn record_movement_rejects_insufficient_stock() {
+        let mut db = TestDb::new().expect("create test db");
+        let med = create(db.conn(), sample_input("Amoxicilina", 3, 5)).expect("create");
+
+        let input = CreateMovementInput {
+            medication_id: med.id.clone(),
+            movement_type: "out".to_string(),
+            quantity: 10,
+            reason: None,
+            reference: None,
+        };
+        let err = record_movement(db.conn(), input, None).expect_err("should fail");
+        assert!(matches!(err, AppError::Validation(_)));
+
+        // Stock must be unchanged after the rejected movement.
+        let updated = get_by_id(db.conn(), &med.id).expect("get updated");
+        assert_eq!(updated.current_stock, 3);
+    }
+
+    #[test]
+    fn record_movement_rejects_zero_quantity() {
+        let mut db = TestDb::new().expect("create test db");
+        let med = create(db.conn(), sample_input("Ceftriaxona", 10, 5)).expect("create");
+
+        let input = CreateMovementInput {
+            medication_id: med.id.clone(),
+            movement_type: "in".to_string(),
+            quantity: 0,
+            reason: None,
+            reference: None,
+        };
+        let err = record_movement(db.conn(), input, None).expect_err("should fail");
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[test]
+    fn record_movement_rejects_invalid_type() {
+        let mut db = TestDb::new().expect("create test db");
+        let med = create(db.conn(), sample_input("Losartán", 10, 5)).expect("create");
+
+        let input = CreateMovementInput {
+            medication_id: med.id.clone(),
+            movement_type: "sideways".to_string(),
+            quantity: 1,
+            reason: None,
+            reference: None,
+        };
+        let err = record_movement(db.conn(), input, None).expect_err("should fail");
+        assert!(matches!(err, AppError::Validation(_)));
     }
 }

@@ -2,7 +2,6 @@
 use crate::db::DbConnection;
 use crate::errors::AppError;
 use crate::models::{CreatePatientInput, Patient};
-use chrono::Utc;
 use rsfbclient::{Execute, Queryable};
 use uuid::Uuid;
 
@@ -135,7 +134,7 @@ pub fn create(
     user_id: Option<&str>,
 ) -> Result<Patient, AppError> {
     let id = Uuid::new_v4().to_string();
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     // Insert first 15 columns to stay within rsfbclient parameter tuple limit
     conn.execute(
@@ -230,7 +229,7 @@ pub fn update(
     input: CreatePatientInput,
     user_id: Option<&str>,
 ) -> Result<Patient, AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     // Capture previous state for the audit log before updating
     let old = get_by_id(conn, id)?;
@@ -306,4 +305,102 @@ pub fn delete(conn: &mut DbConnection, id: &str, user_id: Option<&str>) -> Resul
     )?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::TestDb;
+
+    fn sample_input(document_id: &str) -> CreatePatientInput {
+        CreatePatientInput {
+            first_name: "Ana".to_string(),
+            last_name: "García".to_string(),
+            document_id: document_id.to_string(),
+            document_type: "CC".to_string(),
+            date_of_birth: "1990-05-15".to_string(),
+            gender: "F".to_string(),
+            phone: "555-0100".to_string(),
+            email: "ana@example.com".to_string(),
+            address: "Calle 1".to_string(),
+            blood_type: Some("O+".to_string()),
+            allergies: None,
+            emergency_contact_name: None,
+            emergency_contact_phone: None,
+            insurance_provider: Some("SaludCo".to_string()),
+            insurance_policy_number: None,
+            insurance_expiry_date: None,
+            notes: None,
+        }
+    }
+
+    #[test]
+    fn create_and_get_roundtrip() {
+        let mut db = TestDb::new().expect("create test db");
+
+        let created = create(db.conn(), sample_input("CC-1001"), None).expect("create");
+        assert!(!created.id.is_empty());
+        assert_eq!(created.first_name, "Ana");
+
+        let fetched = get_by_id(db.conn(), &created.id).expect("get by id");
+        assert_eq!(fetched.document_id, "CC-1001");
+        assert_eq!(fetched.phone, "555-0100");
+    }
+
+    #[test]
+    fn get_all_returns_created_patients() {
+        let mut db = TestDb::new().expect("create test db");
+        create(db.conn(), sample_input("CC-2001"), None).expect("create 1");
+        create(db.conn(), sample_input("CC-2002"), None).expect("create 2");
+
+        let all = get_all(db.conn()).expect("get all");
+        assert!(all.len() >= 2, "expected at least 2 patients, got {}", all.len());
+        assert!(all.iter().any(|p| p.document_id == "CC-2001"));
+        assert!(all.iter().any(|p| p.document_id == "CC-2002"));
+    }
+
+    #[test]
+    fn search_finds_by_name_and_document() {
+        let mut db = TestDb::new().expect("create test db");
+        create(db.conn(), sample_input("CC-3001"), None).expect("create");
+
+        let by_name = search(db.conn(), "Ana").expect("search by name");
+        assert!(by_name.iter().any(|p| p.document_id == "CC-3001"));
+
+        let by_doc = search(db.conn(), "CC-3001").expect("search by document");
+        assert_eq!(by_doc.len(), 1);
+        assert_eq!(by_doc[0].first_name, "Ana");
+    }
+
+    #[test]
+    fn update_changes_patient_fields() {
+        let mut db = TestDb::new().expect("create test db");
+        let created = create(db.conn(), sample_input("CC-4001"), None).expect("create");
+
+        let mut updated_input = sample_input("CC-4001");
+        updated_input.first_name = "María".to_string();
+        updated_input.phone = "555-9999".to_string();
+
+        let updated = update(db.conn(), &created.id, updated_input, None).expect("update");
+        assert_eq!(updated.first_name, "María");
+        assert_eq!(updated.phone, "555-9999");
+    }
+
+    #[test]
+    fn delete_removes_patient() {
+        let mut db = TestDb::new().expect("create test db");
+        let created = create(db.conn(), sample_input("CC-5001"), None).expect("create");
+
+        delete(db.conn(), &created.id, None).expect("delete");
+
+        let err = get_by_id(db.conn(), &created.id).expect_err("should be gone");
+        assert!(matches!(err, AppError::NotFound(_)));
+    }
+
+    #[test]
+    fn get_by_id_unknown_returns_not_found() {
+        let mut db = TestDb::new().expect("create test db");
+        let err = get_by_id(db.conn(), "no-such-id").expect_err("should fail");
+        assert!(matches!(err, AppError::NotFound(_)));
+    }
 }

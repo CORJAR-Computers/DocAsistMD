@@ -3,7 +3,6 @@ use crate::models::{Prescription, CreatePrescriptionInput, PrescriptionDetail, P
 use crate::db::DbConnection;
 use rsfbclient::{Queryable, Execute};
 use uuid::Uuid;
-use chrono::Utc;
 
 type PrescriptionRow = (
     String, String, String, String, String, String, Option<String>, i32, String,
@@ -50,7 +49,7 @@ pub fn create(
     }
 
     let id = Uuid::new_v4().to_string();
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     conn.begin_transaction().map_err(|e| AppError::Database(e.to_string()))?;
     let result = (|| -> Result<Prescription, AppError> {
@@ -177,4 +176,239 @@ pub fn get_detail(conn: &mut DbConnection, consultation_id: &str) -> Result<Pres
         created_at: h.13,
         items,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{
+        CreateAppointmentInput, CreateConsultationInput, CreateMedicationInput,
+        CreateMovementInput,
+    };
+    use crate::repositories::{appointment_repo, consultation_repo, medication_repo};
+    use crate::test_utils::{make_doctor, make_patient, TestDb};
+
+    fn make_medication(conn: &mut DbConnection, stock: i32) -> String {
+        let input = CreateMedicationInput {
+            name: "Paracetamol".to_string(),
+            active_ingredient: "Paracetamol".to_string(),
+            presentation: "Tabletas".to_string(),
+            concentration: Some("500 mg".to_string()),
+            current_stock: stock,
+            minimum_stock: 10,
+            unit_price: 1500.0,
+            expiry_date: None,
+            supplier: Some("Distribuidora X".to_string()),
+        };
+        medication_repo::create(conn, input).expect("create medication").id
+    }
+
+    fn make_consultation(conn: &mut DbConnection) -> String {
+        let patient_id = make_patient(conn, "CC-RX-1001");
+        let doctor_id = make_doctor(conn, "LIC-RX-1001");
+        let appointment = appointment_repo::create(
+            conn,
+            CreateAppointmentInput {
+                patient_id,
+                doctor_id,
+                date_time: "2026-08-15 10:00:00".to_string(),
+                duration_minutes: 30,
+                appointment_type: "consultation".to_string(),
+                reason: None,
+                notes: None,
+            },
+            None,
+        )
+        .expect("create appointment");
+        consultation_repo::create(
+            conn,
+            CreateConsultationInput {
+                appointment_id: appointment.id,
+                vital_signs: None,
+                symptoms: Some("Fiebre".to_string()),
+                diagnosis: Some("Gripe".to_string()),
+                cie10_code: Some("J11".to_string()),
+                treatment_plan: Some("Reposo".to_string()),
+                clinical_notes: None,
+            },
+        )
+        .expect("create consultation")
+        .id
+    }
+
+    #[test]
+    fn create_and_get_roundtrip() {
+        let mut db = TestDb::new().expect("create test db");
+        let consultation_id = make_consultation(db.conn());
+        let medication_id = make_medication(db.conn(), 50);
+
+        let input = CreatePrescriptionInput {
+            consultation_id: consultation_id.clone(),
+            medication_id: medication_id.clone(),
+            dosage: "1 tableta".to_string(),
+            frequency: "cada 8 horas".to_string(),
+            duration: "5 días".to_string(),
+            instructions: Some("Tomar con alimentos".to_string()),
+            quantity: 10,
+        };
+        let created = create(db.conn(), input, None).expect("create prescription");
+        assert!(!created.id.is_empty());
+        assert_eq!(created.quantity, 10);
+
+        let list = get_by_consultation(db.conn(), &consultation_id).expect("get by consultation");
+        assert!(list.iter().any(|p| p.id == created.id));
+    }
+
+    #[test]
+    fn create_dispenses_stock_and_records_movement() {
+        let mut db = TestDb::new().expect("create test db");
+        let consultation_id = make_consultation(db.conn());
+        let medication_id = make_medication(db.conn(), 50);
+
+        let input = CreatePrescriptionInput {
+            consultation_id: consultation_id.clone(),
+            medication_id: medication_id.clone(),
+            dosage: "1 tableta".to_string(),
+            frequency: "cada 8 horas".to_string(),
+            duration: "3 días".to_string(),
+            instructions: None,
+            quantity: 10,
+        };
+        create(db.conn(), input, None).expect("create prescription");
+
+        // Stock decremented
+        let med = medication_repo::get_by_id(db.conn(), &medication_id).expect("get medication");
+        assert_eq!(med.current_stock, 40);
+
+        // An "out" movement referencing the prescription was recorded
+        let movements =
+            medication_repo::get_dispensed_movements(db.conn(), &consultation_id).expect("movements");
+        assert_eq!(movements.len(), 1);
+        assert_eq!(movements[0].movement_type, "out");
+        assert_eq!(movements[0].quantity, 10);
+        assert_eq!(movements[0].origin, "receta");
+    }
+
+    #[test]
+    fn create_rejects_insufficient_stock() {
+        let mut db = TestDb::new().expect("create test db");
+        let consultation_id = make_consultation(db.conn());
+        let medication_id = make_medication(db.conn(), 5);
+
+        let input = CreatePrescriptionInput {
+            consultation_id,
+            medication_id: medication_id.clone(),
+            dosage: "1 tableta".to_string(),
+            frequency: "cada 8 horas".to_string(),
+            duration: "5 días".to_string(),
+            instructions: None,
+            quantity: 10,
+        };
+        let err = create(db.conn(), input, None).expect_err("should fail");
+        assert!(matches!(err, AppError::Validation(_)));
+
+        // Stock unchanged
+        let med = medication_repo::get_by_id(db.conn(), &medication_id).expect("get medication");
+        assert_eq!(med.current_stock, 5);
+    }
+
+    #[test]
+    fn dispense_then_reverse_restores_stock_and_pairs() {
+        let mut db = TestDb::new().expect("create test db");
+        let consultation_id = make_consultation(db.conn());
+        let medication_id = make_medication(db.conn(), 50);
+
+        let input = CreatePrescriptionInput {
+            consultation_id: consultation_id.clone(),
+            medication_id: medication_id.clone(),
+            dosage: "1 tableta".to_string(),
+            frequency: "cada 8 horas".to_string(),
+            duration: "3 días".to_string(),
+            instructions: None,
+            quantity: 10,
+        };
+        create(db.conn(), input, None).expect("create prescription");
+
+        // After dispensing: stock 50 -> 40 and one "out" movement with origin receta
+        let movements =
+            medication_repo::get_dispensed_movements(db.conn(), &consultation_id).expect("movements");
+        assert_eq!(movements.len(), 1);
+        assert_eq!(movements[0].origin, "receta");
+        let movement_id = movements[0].id.clone();
+        let med = medication_repo::get_by_id(db.conn(), &medication_id).expect("get medication");
+        assert_eq!(med.current_stock, 40);
+
+        // Undo the dispense: stock back to 50, movement marked reversed
+        medication_repo::reverse_dispense(db.conn(), &movement_id, None).expect("reverse");
+
+        let med = medication_repo::get_by_id(db.conn(), &medication_id).expect("get medication");
+        assert_eq!(med.current_stock, 50, "stock should be restored");
+
+        // The original movement is marked reversed and paired with the compensating "in"
+        let detail = medication_repo::get_movement_detail(db.conn(), &movement_id).expect("detail");
+        assert!(
+            detail.movement.reversed_at.is_some(),
+            "original movement should be marked reversed"
+        );
+        let pair = detail.reversal_pair.expect("reversal pair present");
+        assert_eq!(pair.movement_type, "in");
+        assert_eq!(pair.quantity, 10);
+        assert_eq!(pair.origin, "reversion");
+    }
+
+    #[test]
+    fn reverse_dispense_twice_is_rejected() {
+        let mut db = TestDb::new().expect("create test db");
+        let consultation_id = make_consultation(db.conn());
+        let medication_id = make_medication(db.conn(), 50);
+
+        let input = CreatePrescriptionInput {
+            consultation_id: consultation_id.clone(),
+            medication_id: medication_id.clone(),
+            dosage: "1 tableta".to_string(),
+            frequency: "cada 8 horas".to_string(),
+            duration: "3 días".to_string(),
+            instructions: None,
+            quantity: 10,
+        };
+        create(db.conn(), input, None).expect("create prescription");
+
+        let movements =
+            medication_repo::get_dispensed_movements(db.conn(), &consultation_id).expect("movements");
+        let movement_id = movements[0].id.clone();
+
+        medication_repo::reverse_dispense(db.conn(), &movement_id, None).expect("first reverse");
+
+        let err =
+            medication_repo::reverse_dispense(db.conn(), &movement_id, None).expect_err("second reverse should fail");
+        assert!(matches!(err, AppError::Validation(_)));
+
+        // The failed second reverse must not double-restore the stock.
+        let med = medication_repo::get_by_id(db.conn(), &medication_id).expect("get medication");
+        assert_eq!(med.current_stock, 50, "stock must not be restored twice");
+    }
+
+    #[test]
+    fn reverse_manual_movement_is_rejected() {
+        let mut db = TestDb::new().expect("create test db");
+        let medication_id = make_medication(db.conn(), 20);
+
+        // Manual "out" movement with no prescription reference: cannot be undone
+        let movement = medication_repo::record_movement(
+            db.conn(),
+            CreateMovementInput {
+                medication_id: medication_id.clone(),
+                movement_type: "out".to_string(),
+                quantity: 5,
+                reason: Some("Salida manual".to_string()),
+                reference: None,
+            },
+            None,
+        )
+        .expect("record manual movement");
+
+        let err = medication_repo::reverse_dispense(db.conn(), &movement.id, None)
+            .expect_err("manual movement should not be reversible");
+        assert!(matches!(err, AppError::Validation(_)));
+    }
 }

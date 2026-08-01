@@ -70,10 +70,9 @@ pub fn get_by_id(conn: &mut DbConnection, id: &str) -> Result<Doctor, AppError> 
 pub fn create(conn: &mut DbConnection, input: crate::models::CreateDoctorInput) -> Result<Doctor, AppError> {
     use rsfbclient::Execute;
     use uuid::Uuid;
-    use chrono::Utc;
 
     let id = Uuid::new_v4().to_string();
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     conn.execute(
         "INSERT INTO doctors (id, first_name, last_name, specialty, license_number, phone, email,
@@ -85,4 +84,56 @@ pub fn create(conn: &mut DbConnection, input: crate::models::CreateDoctorInput) 
     ).map_err(|e| AppError::Database(e.to_string()))?;
 
     get_by_id(conn, &id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::CreateDoctorInput;
+    use crate::test_utils::TestDb;
+
+    fn sample_input(license: &str) -> CreateDoctorInput {
+        CreateDoctorInput {
+            first_name: "Carlos".to_string(),
+            last_name: "López".to_string(),
+            specialty: "Cardiología".to_string(),
+            license_number: license.to_string(),
+            phone: "555-0200".to_string(),
+            email: "carlos@example.com".to_string(),
+            schedule_start: "08:00".to_string(),
+            schedule_end: "17:00".to_string(),
+        }
+    }
+
+    #[test]
+    fn create_and_get_roundtrip() {
+        let mut db = TestDb::new().expect("create test db");
+
+        let created = create(db.conn(), sample_input("LIC-1001")).expect("create");
+        assert!(!created.id.is_empty());
+        assert_eq!(created.specialty, "Cardiología");
+
+        let fetched = get_by_id(db.conn(), &created.id).expect("get by id");
+        assert_eq!(fetched.license_number, "LIC-1001");
+        assert_eq!(fetched.status, "active");
+    }
+
+    #[test]
+    fn get_all_returns_created_doctors() {
+        let mut db = TestDb::new().expect("create test db");
+        create(db.conn(), sample_input("LIC-2001")).expect("create 1");
+        create(db.conn(), sample_input("LIC-2002")).expect("create 2");
+
+        let all = get_all(db.conn()).expect("get all");
+        assert!(all.len() >= 2, "expected at least 2 doctors, got {}", all.len());
+        assert!(all.iter().any(|d| d.license_number == "LIC-2001"));
+        assert!(all.iter().any(|d| d.license_number == "LIC-2002"));
+    }
+
+    #[test]
+    fn get_by_id_unknown_returns_not_found() {
+        let mut db = TestDb::new().expect("create test db");
+        let err = get_by_id(db.conn(), "no-such-id").expect_err("should fail");
+        assert!(matches!(err, AppError::NotFound(_)));
+    }
 }

@@ -10,6 +10,8 @@ mod models;
 mod movement_export;
 mod prescription_pdf;
 mod repositories;
+#[cfg(test)]
+mod test_utils;
 
 use db::DbState;
 

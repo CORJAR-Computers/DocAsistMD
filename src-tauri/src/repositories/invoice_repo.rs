@@ -3,7 +3,6 @@ use crate::models::{Invoice, InvoiceWithPatient, CreateInvoiceInput, InvoiceDeta
 use crate::db::DbConnection;
 use rsfbclient::{Queryable, Execute};
 use uuid::Uuid;
-use chrono::Utc;
 
 type InvoiceRow = (
     String, Option<String>, String, f64, f64, f64, f64,
@@ -61,7 +60,7 @@ pub fn create(
     user_id: Option<&str>,
 ) -> Result<Invoice, AppError> {
     let id = Uuid::new_v4().to_string();
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
     let tax_amount = input.subtotal * input.tax_rate;
     let total = input.subtotal + tax_amount;
 
@@ -161,7 +160,7 @@ pub fn update_status(
     payment_method: Option<&str>,
     user_id: Option<&str>,
 ) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     // Capture previous status for the audit log before updating
     let old_rows: Vec<(String,)> = conn.query(
@@ -206,4 +205,60 @@ pub fn update_status(
     )?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::{make_patient, TestDb};
+
+    #[test]
+    fn create_and_get_roundtrip() {
+        let mut db = TestDb::new().expect("create test db");
+        let patient_id = make_patient(db.conn(), "CC-INV-1001");
+
+        let input = CreateInvoiceInput {
+            patient_id: patient_id.clone(),
+            appointment_id: None,
+            subtotal: 100.0,
+            tax_rate: 0.19,
+            tax_amount: 19.0,
+            total: 119.0,
+            payment_method: Some("efectivo".to_string()),
+            due_date: Some("2026-09-01".to_string()),
+        };
+        let created = create(db.conn(), input, None).expect("create invoice");
+        assert!(!created.id.is_empty());
+        assert_eq!(created.status, "pending");
+
+        let fetched = get_by_id(db.conn(), &created.id).expect("get by id");
+        assert_eq!(fetched.patient_id, patient_id);
+        assert_eq!(fetched.subtotal, 100.0);
+        assert_eq!(fetched.payment_method.as_deref(), Some("efectivo"));
+    }
+
+    #[test]
+    fn update_status_marks_paid() {
+        let mut db = TestDb::new().expect("create test db");
+        let patient_id = make_patient(db.conn(), "CC-INV-1002");
+
+        let input = CreateInvoiceInput {
+            patient_id,
+            appointment_id: None,
+            subtotal: 50.0,
+            tax_rate: 0.19,
+            tax_amount: 9.5,
+            total: 59.5,
+            payment_method: None,
+            due_date: None,
+        };
+        let created = create(db.conn(), input, None).expect("create invoice");
+
+        update_status(db.conn(), &created.id, "paid", Some("efectivo"), None)
+            .expect("mark paid");
+
+        let fetched = get_by_id(db.conn(), &created.id).expect("get by id");
+        assert_eq!(fetched.status, "paid");
+        assert!(fetched.paid_at.is_some(), "paid_at should be set");
+    }
 }

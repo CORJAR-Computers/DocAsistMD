@@ -1,7 +1,6 @@
 use crate::db::DbConnection;
 use crate::errors::AppError;
 use crate::models::{Appointment, AppointmentWithNames, CreateAppointmentInput};
-use chrono::Utc;
 use rsfbclient::{Execute, Queryable};
 use uuid::Uuid;
 
@@ -96,7 +95,7 @@ pub fn create(
     user_id: Option<&str>,
 ) -> Result<Appointment, AppError> {
     let id = Uuid::new_v4().to_string();
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     conn.execute(
         "INSERT INTO appointments (id, patient_id, doctor_id, date_time, duration_minutes,
@@ -163,7 +162,7 @@ pub fn update_status(
     status: &str,
     user_id: Option<&str>,
 ) -> Result<(), AppError> {
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     // Capture previous status for the audit log before updating
     let old_rows: Vec<(String,)> = conn
@@ -203,4 +202,60 @@ pub fn update_status(
     )?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::CreateAppointmentInput;
+    use crate::test_utils::{make_doctor, make_patient, TestDb};
+
+    #[test]
+    fn create_appointment_roundtrip() {
+        let mut db = TestDb::new().expect("create test db");
+        let patient_id = make_patient(db.conn(), "CC-APT-1001");
+        let doctor_id = make_doctor(db.conn(), "LIC-APT-1001");
+
+        let input = CreateAppointmentInput {
+            patient_id: patient_id.clone(),
+            doctor_id: doctor_id.clone(),
+            date_time: "2026-08-15 10:00:00".to_string(),
+            duration_minutes: 30,
+            appointment_type: "consultation".to_string(),
+            reason: Some("Dolor de cabeza".to_string()),
+            notes: None,
+        };
+        let created = create(db.conn(), input, None).expect("create appointment");
+        assert!(!created.id.is_empty());
+        assert_eq!(created.patient_id, patient_id);
+        assert_eq!(created.doctor_id, doctor_id);
+        assert_eq!(created.status, "scheduled");
+
+        let all = get_all(db.conn()).expect("get all");
+        assert!(all.iter().any(|a| a.id == created.id));
+    }
+
+    #[test]
+    fn update_status_changes_appointment() {
+        let mut db = TestDb::new().expect("create test db");
+        let patient_id = make_patient(db.conn(), "CC-APT-1002");
+        let doctor_id = make_doctor(db.conn(), "LIC-APT-1002");
+
+        let input = CreateAppointmentInput {
+            patient_id,
+            doctor_id,
+            date_time: "2026-08-15 10:00:00".to_string(),
+            duration_minutes: 30,
+            appointment_type: "consultation".to_string(),
+            reason: None,
+            notes: None,
+        };
+        let created = create(db.conn(), input, None).expect("create appointment");
+
+        update_status(db.conn(), &created.id, "completed", None).expect("update status");
+
+        let all = get_all(db.conn()).expect("get all");
+        let updated = all.iter().find(|a| a.id == created.id).expect("find updated");
+        assert_eq!(updated.status, "completed");
+    }
 }

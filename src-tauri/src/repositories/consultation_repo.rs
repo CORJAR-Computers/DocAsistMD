@@ -3,7 +3,6 @@ use crate::models::{Consultation, CreateConsultationInput};
 use crate::db::DbConnection;
 use rsfbclient::{Queryable, Execute};
 use uuid::Uuid;
-use chrono::Utc;
 
 type ConsultationRow = (
     String, String, String, String, Option<String>, Option<String>,
@@ -51,7 +50,7 @@ pub fn get_by_patient(conn: &mut DbConnection, patient_id: &str) -> Result<Vec<C
 
 pub fn create(conn: &mut DbConnection, input: CreateConsultationInput) -> Result<Consultation, AppError> {
     let id = Uuid::new_v4().to_string();
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     // Lookup patient_id and doctor_id from the appointment
     let appt_rows: Vec<(String, String)> = conn.query(

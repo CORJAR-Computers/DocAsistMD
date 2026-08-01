@@ -1,3 +1,4 @@
+use chrono::Utc;
 use rsfbclient::{builder_native, Execute, FbError, Queryable, SimpleConnection};
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -208,6 +209,14 @@ pub fn verify_password(password: &str, hash: &str) -> bool {
     computed == hash
 }
 
+/// Current UTC timestamp formatted the way Firebird accepts in TIMESTAMP
+/// columns. RFC3339 (with 'T' separator and timezone suffix) is rejected by
+/// Firebird's string-to-TIMESTAMP conversion, so we emit the classic
+/// 'YYYY-MM-DD HH:MM:SS.mmm' form instead.
+pub fn now_timestamp() -> String {
+    Utc::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string()
+}
+
 // ============================================================
 // MIGRATIONS - Each SQL statement as a SEPARATE string
 // This fixes the rsfbclient bug where execute() cannot
@@ -415,6 +424,23 @@ static MIGRATION_V011: &[&str] = &[
 static MIGRATION_V012: &[&str] = &[
     r#"ALTER TABLE inventory_movements ADD reversed_at TIMESTAMP"#
 ];
+
+/// Create a fresh Firebird embedded database at `db_path` and run the full
+/// migration set. Test-only helper: requires the Firebird embedded client to
+/// be resolvable, exactly like the app itself at runtime.
+#[cfg(test)]
+pub(crate) fn create_test_db_at(db_path: &std::path::Path) -> Result<DbConnection, FbError> {
+    if let Some(parent) = db_path.parent() {
+        std::fs::create_dir_all(parent).ok();
+    }
+    let db_path_str = db_path.to_string_lossy().to_string();
+    let mut builder = builder_native().with_dyn_link().with_embedded();
+    builder.db_name(&db_path_str);
+    let conn = builder.create_database().map_err(|e| FbError::from(e))?;
+    let mut simple_conn: SimpleConnection = conn.into();
+    run_all_migrations(&mut simple_conn)?;
+    Ok(simple_conn)
+}
 
 
 

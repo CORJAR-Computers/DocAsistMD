@@ -117,7 +117,7 @@ pub fn login(state: State<DbState>, request: LoginRequest) -> Result<LoginRespon
     };
 
     // Update last_login
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
     let _ = conn.execute(
         "UPDATE users SET last_login = ? WHERE id = ?",
         (&now, &user.id),
@@ -181,7 +181,7 @@ pub fn create_user(state: State<DbState>, input: CreateUserInput) -> Result<User
 
     let id = Uuid::new_v4().to_string();
     let password_hash = hash_password(&input.password);
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
 
     conn.execute(
         "INSERT INTO users (id, username, password_hash, full_name, email, role, status, created_at, updated_at)
@@ -252,7 +252,7 @@ pub fn change_password(
     }
 
     let new_hash = hash_password(&new_password);
-    let now = Utc::now().to_rfc3339();
+    let now = crate::db::now_timestamp();
     conn.execute(
         "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
         (&new_hash, &now, &user_id),

@@ -59,6 +59,7 @@ pub fn save_xlsx(workbook: &mut Workbook, out_path: &Path) -> Result<(), AppErro
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{EnvGuard, TempDir};
     use std::path::Path;
 
     #[test]
@@ -89,9 +90,8 @@ mod tests {
 
     #[test]
     fn default_dir_resolution_order() {
-        // Save original values so we can restore the environment afterwards.
-        let old_userprofile = std::env::var_os("USERPROFILE");
-        let old_home = std::env::var_os("HOME");
+        // Restores the environment on drop, even if an assertion panics.
+        let _guard = EnvGuard::new();
 
         // 1. USERPROFILE wins when set.
         std::env::remove_var("HOME");
@@ -116,16 +116,6 @@ mod tests {
             default_dir("Comprobantes"),
             PathBuf::from(".").join("DocAsistMD").join("Comprobantes")
         );
-
-        // Restore environment.
-        match old_userprofile {
-            Some(v) => std::env::set_var("USERPROFILE", v),
-            None => std::env::remove_var("USERPROFILE"),
-        }
-        match old_home {
-            Some(v) => std::env::set_var("HOME", v),
-            None => std::env::remove_var("HOME"),
-        }
     }
 
     #[test]
@@ -139,10 +129,67 @@ mod tests {
         assert_eq!(csv_field("a,b"), "\"a,b\"");
         assert_eq!(csv_field("a\nb"), "\"a\nb\"");
         assert_eq!(csv_field("a\rb"), "\"a\rb\"");
+        // Combined comma + inner quote: quoted and the inner quote is doubled.
+        assert_eq!(csv_field("a,b\"c"), "\"a,b\"\"c\"");
     }
 
     #[test]
     fn csv_field_doubles_inner_quotes() {
         assert_eq!(csv_field("dijo \"hola\""), "\"dijo \"\"hola\"\"\"");
+        // A single quote alone still triggers quoting with doubling.
+        assert_eq!(csv_field("solo\"comilla"), "\"solo\"\"comilla\"");
+    }
+
+    #[test]
+    fn save_csv_writes_content_and_creates_parent_dirs() {
+        let temp = TempDir::new();
+        // Parent directories don't exist yet and must be created.
+        let out_path = temp.path().join("sub/nested/ventas.csv");
+        let content = "\u{feff}nombre,cantidad\nAspirina,10\n";
+
+        save_csv(content, &out_path).expect("save_csv should succeed");
+
+        assert!(out_path.exists(), "CSV file should exist");
+        assert_eq!(
+            std::fs::read_to_string(&out_path).expect("read back csv"),
+            content
+        );
+        assert!(out_path.parent().unwrap().is_dir(), "parent dirs created");
+    }
+
+    #[test]
+    fn save_csv_overwrites_existing_file() {
+        let temp = TempDir::new();
+        let out_path = temp.path().join("ventas.csv");
+        std::fs::write(&out_path, "contenido anterior\n").expect("write initial file");
+
+        let new_content = "\u{feff}nombre,cantidad\nParacetamol,20\n";
+        save_csv(new_content, &out_path).expect("save_csv should overwrite");
+
+        assert_eq!(
+            std::fs::read_to_string(&out_path).expect("read back csv"),
+            new_content,
+            "existing file should be fully replaced"
+        );
+    }
+
+    #[test]
+    fn save_xlsx_writes_workbook_and_creates_parent_dirs() {
+        let temp = TempDir::new();
+        // Parent directories don't exist yet and must be created.
+        let out_path = temp.path().join("reportes/anidados/ingresos.xlsx");
+
+        let mut workbook = Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet.write(0, 0, "Ingresos").expect("write cell");
+        sheet.write(1, 0, 1234.5).expect("write cell");
+
+        save_xlsx(&mut workbook, &out_path).expect("save_xlsx should succeed");
+
+        assert!(out_path.exists(), "XLSX file should exist");
+        let bytes = std::fs::read(&out_path).expect("read back xlsx");
+        // XLSX is a zip archive, so it starts with the PK magic bytes.
+        assert!(bytes.starts_with(b"PK"), "xlsx should start with zip magic bytes");
+        assert!(out_path.parent().unwrap().is_dir(), "parent dirs created");
     }
 }
