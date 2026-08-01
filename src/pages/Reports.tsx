@@ -166,13 +166,13 @@ export default function Reports() {
           )}
 
           {exportResult && (
-            <div className="mt-3 flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20 text-emerald-700 text-sm">
+            <div className="mt-3 flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20 text-success-text text-sm">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium">
                   Archivo {exportResult.type === "pdf" ? "PDF" : "Excel"} generado correctamente
                 </p>
-                <p className="text-xs text-emerald-600 truncate font-mono">{exportResult.path}</p>
+                <p className="text-xs text-success-text truncate font-mono">{exportResult.path}</p>
               </div>
               <Button variant="outline" size="sm" className="h-7 gap-1 text-xs flex-shrink-0" onClick={openFile}>
                 <FileText className="w-3 h-3" /> Abrir
@@ -244,7 +244,7 @@ export default function Reports() {
                       <tr><td colSpan={3} className="px-6 py-8 text-center text-text-light">Sin ingresos en el periodo</td></tr>
                     ) : (
                       report.byDoctor.map((d) => (
-                        <tr key={d.doctorName} className="hover:bg-surface-dark/30 transition-colors">
+                        <tr key={d.doctorName} className="hover:bg-surface-dark/30 transition-colors duration-200 motion-reduce:transition-none">
                           <td className="px-6 py-3.5 text-sm font-medium text-text">{d.doctorName}</td>
                           <td className="px-6 py-3.5 text-sm text-text-light">{d.invoiceCount}</td>
                           <td className="px-6 py-3.5 text-sm font-semibold text-text text-right">{fmt(d.total)}</td>
@@ -281,7 +281,7 @@ export default function Reports() {
                       <tr><td colSpan={6} className="px-6 py-8 text-center text-text-light">No hay facturas pagadas en el periodo</td></tr>
                     ) : (
                       report.rows.map((r) => (
-                        <tr key={r.invoiceId} className="hover:bg-surface-dark/30 transition-colors">
+                        <tr key={r.invoiceId} className="hover:bg-surface-dark/30 transition-colors duration-200 motion-reduce:transition-none">
                           <td className="px-6 py-3 text-sm font-mono text-primary font-medium">
                             {r.invoiceId.slice(0, 8).toUpperCase()}
                           </td>

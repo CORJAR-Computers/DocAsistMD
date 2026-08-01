@@ -144,7 +144,7 @@ export default function Dashboard() {
                   {todayAppointments.map((apt) => {
                     const statusInfo = STATUS_VARIANTS[apt.status] || "secondary";
                     return (
-                      <div key={apt.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-dark/50 transition-colors">
+                      <div key={apt.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-dark/50 transition-colors duration-200 motion-reduce:transition-none">
                         <div className="text-sm font-mono font-semibold text-primary w-12">
                           {new Date(apt.dateTime).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
                         </div>
@@ -173,16 +173,16 @@ export default function Dashboard() {
               <CardTitle className="text-base font-semibold">Acciones Rapidas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <button onClick={() => navigate('/patients/new')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-primary transition-colors text-sm font-medium">
+              <button onClick={() => navigate('/patients/new')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-primary transition-colors duration-200 motion-reduce:transition-none text-sm font-medium">
                 <UserPlus className="w-4 h-4 flex-shrink-0" /> Nuevo Paciente
               </button>
-              <button onClick={() => navigate('/appointments')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors text-sm font-medium">
+              <button onClick={() => navigate('/appointments')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-secondary/5 hover:bg-secondary/10 text-secondary transition-colors duration-200 motion-reduce:transition-none text-sm font-medium">
                 <CalendarDays className="w-4 h-4 flex-shrink-0" /> Agendar Cita
               </button>
-              <button onClick={() => navigate('/consultations')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-success/5 hover:bg-success/10 text-emerald-600 transition-colors text-sm font-medium">
+              <button onClick={() => navigate('/consultations')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-success/5 hover:bg-success/10 text-success-text transition-colors duration-200 motion-reduce:transition-none text-sm font-medium">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> Registrar Consulta
               </button>
-              <button onClick={() => navigate('/appointments')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-warning/5 hover:bg-warning/10 text-amber-600 transition-colors text-sm font-medium">
+              <button onClick={() => navigate('/appointments')} className="w-full flex items-center gap-3 p-3 rounded-lg bg-warning/5 hover:bg-warning/10 text-warning-text transition-colors duration-200 motion-reduce:transition-none text-sm font-medium">
                 <CalendarDays className="w-4 h-4 flex-shrink-0" /> Ver Agenda Completa
               </button>
             </CardContent>
@@ -204,7 +204,7 @@ export default function Dashboard() {
                     <button
                       key={p.id}
                       onClick={() => navigate(`/patients/${p.id}/history`)}
-                      className="w-full flex items-center gap-3 text-left hover:bg-surface-dark/50 rounded-lg p-1.5 -m-1.5 transition-colors"
+                      className="w-full flex items-center gap-3 text-left hover:bg-surface-dark/50 rounded-lg p-1.5 -m-1.5 transition-colors duration-200 motion-reduce:transition-none"
                     >
                       <div className="w-8 h-8 rounded-full flex-shrink-0 bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
                         {p.firstName?.[0]}{p.lastName?.[0]}
@@ -233,8 +233,8 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
                 <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-amber-800 truncate">Recordatorio: {unconfirmedTomorrow} citas sin confirmar para manana</p>
-                  <p className="text-xs text-amber-600 truncate">Utilice el modulo de Citas para confirmar o cancelar</p>
+                  <p className="text-sm font-medium text-warning-text-dark truncate">Recordatorio: {unconfirmedTomorrow} citas sin confirmar para manana</p>
+                  <p className="text-xs text-warning-text truncate">Utilice el modulo de Citas para confirmar o cancelar</p>
                 </div>
               </div>
             )}
@@ -244,20 +244,20 @@ export default function Dashboard() {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-danger/10 border border-danger/20">
                 <AlertTriangle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-red-800">{lowStock.length} medicamento(s) con stock bajo o agotado</p>
+                  <p className="text-sm font-medium text-danger-text-dark">{lowStock.length} medicamento(s) con stock bajo o agotado</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {lowStockSorted.map((m) => (
-                      <span key={m.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-danger/25 text-xs">
+                      <span key={m.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface border border-danger/25 text-xs">
                         <Pill className="w-3 h-3 text-danger" />
                         <span className="font-medium text-text truncate max-w-[150px]">{m.name}</span>
                         <span className="text-text-light">
-                          <span className={cn("font-semibold", m.currentStock <= 0 ? "text-red-600" : "text-amber-700")}>{m.currentStock}</span>/
+                          <span className={cn("font-semibold", m.currentStock <= 0 ? "text-danger-text" : "text-warning-text")}>{m.currentStock}</span>/
                           {m.minimumStock}
                         </span>
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-red-600 mt-2">Revise el inventario para reabastecer</p>
+                  <p className="text-xs text-danger-text mt-2">Revise el inventario para reabastecer</p>
                 </div>
               </div>
             )}
@@ -267,8 +267,8 @@ export default function Dashboard() {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-danger/10 border border-danger/20">
                 <AlertTriangle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-red-800">{expired.length} medicamento(s) VENCIDOS</p>
-                  <p className="text-xs text-red-600 mt-0.5">
+                  <p className="text-sm font-medium text-danger-text-dark">{expired.length} medicamento(s) VENCIDOS</p>
+                  <p className="text-xs text-danger-text mt-0.5">
                     {expired.map((m) => `${m.name} (${m.expiryDate ? fmtShortDate(m.expiryDate) : ""})`).join(", ")}
                   </p>
                 </div>
@@ -280,10 +280,10 @@ export default function Dashboard() {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
                 <CalendarClock className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-amber-800">
+                  <p className="text-sm font-medium text-warning-text-dark">
                     {expiringSoon.length} medicamento(s) por vencer en {EXPIRY_DAYS} dias
                   </p>
-                  <p className="text-xs text-amber-600 mt-0.5">
+                  <p className="text-xs text-warning-text mt-0.5">
                     {expiringSoon.map((m) => `${m.name} (${m.expiryDate ? fmtShortDate(m.expiryDate) : ""})`).join(", ")}
                   </p>
                 </div>
@@ -293,7 +293,7 @@ export default function Dashboard() {
             {(lowStock.length > 0 || expiring.length > 0) && (
               <button
                 onClick={() => navigate('/medications')}
-                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline mt-1"
+                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline transition-all duration-200 motion-reduce:transition-none mt-1"
               >
                 Ver inventario completo <ArrowRight className="w-3.5 h-3.5" />
               </button>

@@ -11,73 +11,97 @@
   --color-success: #4ECDC4;
   --color-warning: #FFB347;
   --color-danger: #E74C3C;
+
+  /* Texto por estado (reemplaza la paleta por defecto emerald/amber/red/blue) */
+  --color-success-text: #047857; /* emerald-700 */
+  --color-warning-text: #B45309; /* amber-700 */
+  --color-warning-text-dark: #92400E; /* amber-800 (headings) */
+  --color-danger-text: #B91C1C; /* red-700 */
+  --color-danger-text-dark: #991B1B; /* red-800 (headings) */
+  --color-info-text: #1D4ED8; /* blue-700 */
+
+  /* Variantes dark para hovers de botones de estado */
+  --color-success-dark: #059669; /* emerald-600 */
+  --color-danger-dark: #DC2626; /* red-600 */
+
   --color-sidebar: #0F2B3D;
   --color-sidebar-hover: #1A3D54;
   --color-sidebar-active: #1B6B93;
   --color-surface: #F8FAFB;
   --color-surface-dark: #EDF2F7;
+  --color-surface-hover: #D8E0EA; /* hover intermedio: mas oscuro que border para contraste en claro */
   --color-border: #E2E8F0;
   --color-text: #2C3E50;
   --color-text-light: #718096;
   --color-text-muted: #A0AEC0;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  html, body, #root {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--color-text);
+    background: var(--color-surface);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-text-muted);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-light);
+  }
+
+  /* Respeta prefers-reduced-motion: minimiza transiciones y animaciones (accesibilidad) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-html, body, #root {
-  height: 100%;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: var(--color-text);
-  background: var(--color-surface);
-}
+@layer components {
+  .form-input {
+    width: 100%;
+    height: 2.25rem;
+    padding: 0 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-dark);
+    font-size: 0.875rem;
+    color: var(--color-text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+  .form-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(27, 107, 147, 0.12);
+  }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+  .form-input::placeholder {
+    color: var(--color-text-muted);
+  }
 
-::-webkit-scrollbar-thumb {
-  background: var(--color-text-muted);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-light);
-}
-
-.form-input {
-  width: 100%;
-  height: 2.25rem;
-  padding: 0 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border);
-  background: white;
-  font-size: 0.875rem;
-  color: var(--color-text);
-  transition: border-color 0.15s, box-shadow 0.15s;
-  outline: none;
-}
-
-.form-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(27, 107, 147, 0.12);
-}
-
-.form-input::placeholder {
-  color: var(--color-text-muted);
-}
-
-textarea.form-input {
-  height: auto;
-  padding: 0.5rem 0.75rem;
+  textarea.form-input {
+    height: auto;
+    padding: 0.5rem 0.75rem;
+  }
 }
 
 /* ── Print styles (invoice receipts) ── */

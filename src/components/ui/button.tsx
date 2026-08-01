@@ -10,10 +10,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "default", ...props }, ref) => {
     const variants: Record<string, string> = {
       default: "bg-primary text-white hover:bg-primary-light shadow-sm",
-      destructive: "bg-danger text-white hover:bg-red-600 shadow-sm",
-      outline: "border border-border bg-white hover:bg-surface-dark text-text",
+      destructive: "bg-danger text-white hover:bg-danger-dark shadow-sm",
+      outline: "border border-border bg-surface-dark hover:bg-surface-hover text-text",
       secondary: "bg-secondary text-white hover:bg-secondary-light shadow-sm",
-      ghost: "hover:bg-surface-dark text-text",
+      ghost: "hover:bg-surface-hover text-text",
       link: "text-primary underline-offset-4 hover:underline",
     };
     const sizes: Record<string, string> = {
@@ -26,7 +26,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={cn(
-          "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+          "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
           variants[variant],
           sizes[size],
           className

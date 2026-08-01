@@ -210,7 +210,7 @@ export default function Medications() {
         <button
           onClick={() => setTab("inventory")}
           className={cn(
-            "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+            "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors duration-200 motion-reduce:transition-none",
             tab === "inventory"
               ? "border-primary text-primary"
               : "border-transparent text-text-light hover:text-text"
@@ -221,7 +221,7 @@ export default function Medications() {
         <button
           onClick={() => setTab("movements")}
           className={cn(
-            "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+            "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors duration-200 motion-reduce:transition-none",
             tab === "movements"
               ? "border-primary text-primary"
               : "border-transparent text-text-light hover:text-text"
@@ -239,20 +239,20 @@ export default function Medications() {
             <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
               <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-amber-800">
+                <p className="text-sm font-medium text-warning-text-dark">
                   {lowStock.length} medicamento(s) con stock bajo o agotado
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {lowStockSorted.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-lg bg-white border border-warning/30"
+                      className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-lg bg-surface border border-warning/30"
                     >
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-text truncate max-w-[160px]">{m.name}</p>
                         <p className="text-[10px] text-text-light">
                           Stock:{" "}
-                          <span className={cn("font-semibold", m.currentStock <= 0 ? "text-red-600" : "text-amber-700")}>
+                          <span className={cn("font-semibold", m.currentStock <= 0 ? "text-danger-text" : "text-warning-text")}>
                             {m.currentStock}
                           </span>{" "}
                           / mín. {m.minimumStock}
@@ -261,7 +261,7 @@ export default function Medications() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs text-emerald-700 border-success/30 hover:bg-success/10"
+                        className="h-7 text-xs text-success-text border-success/30 hover:bg-success/10"
                         onClick={() => setMovementFor({ medication: m, type: "in" })}
                         title={`Registrar entrada de ${m.name}`}
                       >
@@ -284,8 +284,8 @@ export default function Medications() {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-danger/10 border border-danger/20">
                 <AlertTriangle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-red-800">{expired.length} medicamento(s) VENCIDOS</p>
-                  <p className="text-xs text-red-600 mt-0.5">
+                  <p className="text-sm font-medium text-danger-text-dark">{expired.length} medicamento(s) VENCIDOS</p>
+                  <p className="text-xs text-danger-text mt-0.5">
                     {expired.map((m) => `${m.name} (${fmtDate(m.expiryDate)})`).join(", ")}
                   </p>
                   <p className="text-xs text-red-500 mt-1">
@@ -298,10 +298,10 @@ export default function Medications() {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
                 <CalendarClock className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-amber-800">
+                  <p className="text-sm font-medium text-warning-text-dark">
                     {expiring.length - expired.length} medicamento(s) por vencer en {EXPIRY_DAYS} días
                   </p>
-                  <p className="text-xs text-amber-600 mt-0.5">
+                  <p className="text-xs text-warning-text mt-0.5">
                     {expiring
                       .filter((m) => new Date(m.expiryDate!) >= new Date())
                       .map((m) => `${m.name} (${fmtDate(m.expiryDate)})`)
@@ -345,7 +345,7 @@ export default function Medications() {
                         const state = stockState(med);
                         const isExpiring = med.expiryDate && new Date(med.expiryDate) <= new Date(Date.now() + EXPIRY_DAYS * 86400000);
                         return (
-                          <tr key={med.id} className="hover:bg-surface-dark/30 transition-colors">
+                          <tr key={med.id} className="hover:bg-surface-dark/30 transition-colors duration-200 motion-reduce:transition-none">
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -381,7 +381,7 @@ export default function Medications() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="text-emerald-700 border-success/30 hover:bg-success/10"
+                                  className="text-success-text border-success/30 hover:bg-success/10"
                                   onClick={() => setMovementFor({ medication: med, type: "in" })}
                                   title="Registrar entrada"
                                 >
@@ -390,7 +390,7 @@ export default function Medications() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="text-red-700 border-danger/30 hover:bg-danger/10"
+                                  className="text-danger-text border-danger/30 hover:bg-danger/10"
                                   onClick={() => setMovementFor({ medication: med, type: "out" })}
                                   title="Registrar salida"
                                 >
@@ -417,11 +417,11 @@ export default function Medications() {
         </div>
       )}
       {tab === "movements" && exportResult && (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20 text-emerald-700 text-sm">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20 text-success-text text-sm">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="font-medium">Archivo {exportResult.format === "excel" ? "Excel" : "CSV"} generado correctamente</p>
-            <p className="text-xs text-emerald-600 truncate font-mono">{exportResult.path}</p>
+            <p className="text-xs text-success-text truncate font-mono">{exportResult.path}</p>
           </div>
           <Button variant="outline" size="sm" className="h-7 gap-1 text-xs flex-shrink-0" onClick={openExport}>
             <FileText className="w-3 h-3" /> Abrir
@@ -515,7 +515,7 @@ export default function Medications() {
                       </tr>
                     ) : (
                       movements.map((mv) => (
-                        <tr key={mv.id} className={cn("hover:bg-surface-dark/30 transition-colors", mv.reversedAt && "opacity-60")}>
+                        <tr key={mv.id} className={cn("hover:bg-surface-dark/30 transition-colors duration-200 motion-reduce:transition-none", mv.reversedAt && "opacity-60")}>
                           <td className="px-6 py-4 text-sm text-text-light whitespace-nowrap">
                             {new Date(mv.createdAt).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}
                           </td>
@@ -550,7 +550,7 @@ export default function Medications() {
                           <td className="px-6 py-4">
                             <span className={cn(
                               "text-sm font-semibold",
-                              mv.movementType === "in" ? "text-emerald-700" : "text-red-700"
+                              mv.movementType === "in" ? "text-success-text" : "text-danger-text"
                             )}>
                               {mv.movementType === "in" ? "+" : "−"}{mv.quantity}
                             </span>

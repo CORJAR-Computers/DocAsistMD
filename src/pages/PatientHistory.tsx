@@ -213,9 +213,9 @@ export default function PatientHistory() {
         <div className="flex gap-1 p-1 bg-surface-dark rounded-xl">
           <button
             onClick={() => setActiveTab("consultations")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all motion-reduce:transition-none ${
               activeTab === "consultations"
-                ? "bg-white text-primary shadow-sm"
+                ? "bg-surface text-primary shadow-sm"
                 : "text-text-light hover:text-text"
             }`}
           >
@@ -224,9 +224,9 @@ export default function PatientHistory() {
           </button>
           <button
             onClick={() => setActiveTab("appointments")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all motion-reduce:transition-none ${
               activeTab === "appointments"
-                ? "bg-white text-primary shadow-sm"
+                ? "bg-surface text-primary shadow-sm"
                 : "text-text-light hover:text-text"
             }`}
           >

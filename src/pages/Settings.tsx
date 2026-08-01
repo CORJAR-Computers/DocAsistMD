@@ -154,7 +154,7 @@ export default function Settings() {
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">Rol</label>
                 <select
-                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full h-10 rounded-lg border border-border bg-surface-dark px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
                   value={form.role}
                   onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as UserRole }))}
                 >
@@ -222,7 +222,7 @@ export default function Settings() {
             </div>
           </div>
           {folderMsg && (
-            <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg border ${folderMsg.type === "error" ? "bg-danger/10 border-danger/20 text-danger" : "bg-success/10 border-success/20 text-emerald-700"}`}>
+            <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg border ${folderMsg.type === "error" ? "bg-danger/10 border-danger/20 text-danger" : "bg-success/10 border-success/20 text-success-text"}`}>
               {folderMsg.type === "error" ? <FolderX className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
               {folderMsg.text}
             </div>

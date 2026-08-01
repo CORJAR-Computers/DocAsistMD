@@ -74,7 +74,7 @@ export default function NewAppointmentModal({ onClose, onCreated, preselectedPat
               <p className="text-xs text-text-light">Agendar una cita médica</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-surface-dark flex items-center justify-center text-text-light hover:text-text transition-colors">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-surface-hover flex items-center justify-center text-text-light hover:text-text transition-colors duration-200 motion-reduce:transition-none">
             <X className="w-4 h-4" />
           </button>
         </div>

@@ -75,12 +75,12 @@ export default function Consultations() {
                 placeholder="Buscar por diagnóstico, código CIE-10, síntomas o paciente..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 rounded-lg border border-border bg-white text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full h-10 pl-10 pr-4 rounded-lg border border-border bg-surface-dark text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <div className="w-full sm:w-64">
               <select
-                className="w-full h-10 px-3 rounded-lg border border-border bg-white text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full h-10 px-3 rounded-lg border border-border bg-surface-dark text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
                 value={selectedPatientId}
                 onChange={(e) => setSelectedPatientId(e.target.value)}
               >

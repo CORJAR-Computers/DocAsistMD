@@ -81,12 +81,12 @@ export default function PrescriptionPdfButton({
 
       {result && (
         <div className="w-full rounded-lg border border-success/30 bg-success/10 p-2 space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-success-text">
             <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
             Receta generada con código QR
           </div>
           <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[11px] text-emerald-600 truncate">
+            <span className="font-mono text-[11px] text-success-text truncate">
               Código: {result.verificationCode}
             </span>
             <Button size="sm" variant="outline" className="h-6 gap-1 text-[11px] flex-shrink-0" onClick={open} disabled={opening}>
@@ -95,7 +95,7 @@ export default function PrescriptionPdfButton({
             </Button>
           </div>
           {!compact && (
-            <p className="font-mono text-[10px] text-emerald-600/70 truncate" title={result.path}>
+            <p className="font-mono text-[10px] text-success-text/70 truncate" title={result.path}>
               {result.path}
             </p>
           )}

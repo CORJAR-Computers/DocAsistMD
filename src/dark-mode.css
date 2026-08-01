@@ -1,0 +1,130 @@
+/*
+ * Modo oscuro para DocAsistMD
+ * ───────────────────────────
+ * Mecanismo: el atributo `data-theme` en <html> controla el tema.
+ *   - data-theme="dark"  → oscuro forzado (toggle manual)
+ *   - data-theme="light" → claro forzado (toggle manual)
+ *   - data-theme="auto"  → sigue la preferencia del SO (prefers-color-scheme)
+ *
+ * La preferencia del usuario se persiste en localStorage y se aplica antes
+ * del primer paint con un script inline en index.html (anti-FOUC).
+ *
+ * Estrategia: los tokens definidos en `@theme` (src/index.css) se emiten
+ * como variables CSS (`--color-*`). Aquí redefinimos esas mismas variables
+ * dentro de `@layer base` (que tiene prioridad sobre `@layer theme`), de
+ * modo que TODAS las utilidades de Tailwind (`bg-surface`, `text-text`,
+ * `border-border`, etc.) cambian de paleta sin tocar ningún componente.
+ *
+ * La app usa exclusivamente tokens: superficies (`bg-surface`,
+ * `bg-surface-dark`), texto y colores de estado (`text-success-text`,
+ * `text-warning-text`, `text-danger-text`, `text-info-text`). Por eso este
+ * archivo NO contiene overrides de clases — solo redefine variables, que es
+ * el mecanismo limpio de theming en Tailwind v4.
+ *
+ * Nota sobre los media queries: el operador `not` solo es válido al inicio
+ * de una media query (`@media not print`), por eso se anida en vez de usar
+ * `and (not print)`. Así las superficies oscuras no se aplican al imprimir
+ * facturas/historiales (el bloque @media print de index.css los fuerza a
+ * blanco con !important).
+ *
+ * Nota sobre duplicación: los bloques oscuros aparecen dos veces (manual con
+ * `[data-theme="dark"]` y automático dentro de `prefers-color-scheme` con
+ * `[data-theme="auto"]`). Es intencional: son condiciones mutuamente
+ * excluyentes y mantenerlas explícitas es más legible que un preprocesador.
+ */
+
+@layer base {
+  @media not print {
+    /* Manual: usuario eligió oscuro */
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+
+      /* Marcas (ligeramente más luminosas para contraste sobre fondo oscuro) */
+      --color-primary: #2a8cb8;
+      --color-primary-light: #3fa4d1;
+      --color-primary-dark: #1b6b93;
+      --color-secondary: #4fc0d0;
+      --color-secondary-light: #7dd3e0;
+      --color-accent: #7fb3d9;
+      --color-accent-light: #a2d2ff;
+      --color-success: #4ecdc4;
+      --color-warning: #ffb347;
+      --color-danger: #e85d5d;
+
+      /* Texto por estado (variantes claras de la paleta por defecto) */
+      --color-success-text: #6ee7b7; /* emerald-300 */
+      --color-warning-text: #fcd34d; /* amber-300 */
+      --color-warning-text-dark: #fde68a; /* amber-200 (headings) */
+      --color-danger-text: #fca5a5; /* red-300 */
+      --color-danger-text-dark: #fecaca; /* red-200 (headings) */
+      --color-info-text: #93c5fd; /* blue-300 */
+
+      /* Variantes dark para hovers de botones de estado */
+      --color-success-dark: #059669; /* emerald-600 */
+      --color-danger-dark: #dc2626; /* red-600 */
+
+      /* Navegación */
+      --color-sidebar: #0a1e2b;
+      --color-sidebar-hover: #13303f;
+      --color-sidebar-active: #1b6b93;
+
+      /* Superficies (slate oscuro) */
+      --color-surface: #0f172a; /* slate-900 */
+      --color-surface-dark: #1e293b; /* slate-800 */
+      --color-surface-hover: #3b4a63; /* hover intermedio: mas claro que border en oscuro */
+      --color-border: #334155; /* slate-700 */
+
+      /* Texto */
+      --color-text: #e2e8f0; /* slate-200 */
+      --color-text-light: #94a3b8; /* slate-400 */
+      --color-text-muted: #64748b; /* slate-500 */
+    }
+
+    /* Automático: el SO está en oscuro y no hay preferencia manual */
+    @media (prefers-color-scheme: dark) {
+      :root[data-theme="auto"] {
+        color-scheme: dark;
+
+        /* Marcas (ligeramente más luminosas para contraste sobre fondo oscuro) */
+        --color-primary: #2a8cb8;
+        --color-primary-light: #3fa4d1;
+        --color-primary-dark: #1b6b93;
+        --color-secondary: #4fc0d0;
+        --color-secondary-light: #7dd3e0;
+        --color-accent: #7fb3d9;
+        --color-accent-light: #a2d2ff;
+        --color-success: #4ecdc4;
+        --color-warning: #ffb347;
+        --color-danger: #e85d5d;
+
+        /* Texto por estado (variantes claras de la paleta por defecto) */
+        --color-success-text: #6ee7b7; /* emerald-300 */
+        --color-warning-text: #fcd34d; /* amber-300 */
+        --color-warning-text-dark: #fde68a; /* amber-200 (headings) */
+        --color-danger-text: #fca5a5; /* red-300 */
+        --color-danger-text-dark: #fecaca; /* red-200 (headings) */
+        --color-info-text: #93c5fd; /* blue-300 */
+
+        /* Variantes dark para hovers de botones de estado */
+        --color-success-dark: #059669; /* emerald-600 */
+        --color-danger-dark: #dc2626; /* red-600 */
+
+        /* Navegación */
+        --color-sidebar: #0a1e2b;
+        --color-sidebar-hover: #13303f;
+        --color-sidebar-active: #1b6b93;
+
+        /* Superficies (slate oscuro) */
+        --color-surface: #0f172a; /* slate-900 */
+        --color-surface-dark: #1e293b; /* slate-800 */
+        --color-surface-hover: #3b4a63; /* hover intermedio: mas claro que border en oscuro */
+        --color-border: #334155; /* slate-700 */
+
+        /* Texto */
+        --color-text: #e2e8f0; /* slate-200 */
+        --color-text-light: #94a3b8; /* slate-400 */
+        --color-text-muted: #64748b; /* slate-500 */
+      }
+    }
+  }
+}

@@ -130,7 +130,7 @@ export default function Billing() {
                   {invoices.map((inv) => {
                     const MethodIcon = inv.paymentMethod ? METHOD_ICONS[inv.paymentMethod] : Receipt;
                     return (
-                      <tr key={inv.id} className="hover:bg-surface-dark/30 transition-colors cursor-pointer" onClick={() => navigate(`/billing/${inv.id}`)}>
+                      <tr key={inv.id} className="hover:bg-surface-dark/30 transition-colors duration-200 motion-reduce:transition-none cursor-pointer" onClick={() => navigate(`/billing/${inv.id}`)}>
                         <td className="px-6 py-4 text-sm font-mono text-primary font-medium underline-offset-2 hover:underline">
                           {inv.id.slice(0, 8).toUpperCase()}
                         </td>
@@ -187,7 +187,7 @@ export default function Billing() {
                   <p className="text-xs text-text-light">Confirme el metodo de pago</p>
                 </div>
               </div>
-              <button onClick={() => setPayingId(null)} className="w-8 h-8 rounded-lg hover:bg-surface-dark flex items-center justify-center text-text-light hover:text-text transition-colors">
+              <button onClick={() => setPayingId(null)} className="w-8 h-8 rounded-lg hover:bg-surface-hover flex items-center justify-center text-text-light hover:text-text transition-colors duration-200 motion-reduce:transition-none">
                 <X className="w-4 h-4" />
               </button>
             </div>

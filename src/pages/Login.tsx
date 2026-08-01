@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { Activity, LogIn, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Login() {
@@ -41,7 +40,7 @@ export default function Login() {
           <p className="text-white/60 text-sm mt-1">Sistema de Gestion Medica</p>
         </div>
 
-        <Card className="backdrop-blur-sm bg-white/95 shadow-2xl">
+        <Card className="backdrop-blur-sm bg-surface-dark/95 shadow-2xl">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-xl">Iniciar Sesion</CardTitle>
             <p className="text-sm text-text-light">Ingrese sus credenciales para acceder</p>
@@ -55,33 +54,39 @@ export default function Login() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-text mb-1.5">Usuario</label>
+                <label htmlFor="username" className="block text-sm font-medium text-text mb-1.5">Usuario</label>
                 <input
+                  id="username"
+                  name="username"
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Ingrese su usuario"
+                  autoComplete="username"
                   required
                   autoFocus
-                  className="w-full h-10 px-3 rounded-lg border border-border bg-white text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-surface-dark text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text mb-1.5">Password</label>
+                <label htmlFor="password" className="block text-sm font-medium text-text mb-1.5">Password</label>
                 <div className="relative">
                   <input
+                    id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Ingrese su password"
+                    autoComplete="current-password"
                     required
-                    className="w-full h-10 px-3 pr-10 rounded-lg border border-border bg-white text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full h-10 px-3 pr-10 rounded-lg border border-border bg-surface-dark text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors duration-200 motion-reduce:transition-none"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

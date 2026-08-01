@@ -212,7 +212,7 @@ export default function AuditLog() {
               placeholder="Buscar usuario o acción..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-56 h-9 pl-9 pr-3 rounded-lg border border-border bg-surface text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-56 h-9 pl-9 pr-3 rounded-lg border border-border bg-surface-dark text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <svg className="absolute left-3 top-2.5 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -236,11 +236,11 @@ export default function AuditLog() {
 
       {/* Export banner */}
       {exportResult && (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20 text-emerald-700 text-sm">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20 text-success-text text-sm">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="font-medium">Archivo {exportResult.format === "excel" ? "Excel" : exportResult.format === "pdf" ? "PDF" : "CSV"} generado correctamente</p>
-            <p className="text-xs text-emerald-600 truncate font-mono">{exportResult.path}</p>
+            <p className="text-xs text-success-text truncate font-mono">{exportResult.path}</p>
           </div>
           <Button variant="outline" size="sm" className="h-7 gap-1 text-xs flex-shrink-0" onClick={openExport}>
             <FileText className="w-3 h-3" /> Abrir
@@ -395,7 +395,7 @@ function AuditRow({
   const hasChanges = e.oldValues || e.newValues;
   return (
     <>
-      <tr className="hover:bg-surface-dark/30 transition-colors">
+      <tr className="hover:bg-surface-dark/30 transition-colors duration-200 motion-reduce:transition-none">
         <td className="px-6 py-4 text-sm text-text-light whitespace-nowrap">{fmtDateTime(e.createdAt)}</td>
         <td className="px-6 py-4">
           {e.userName ? (
@@ -432,7 +432,7 @@ function AuditRow({
               {e.oldValues && (
                 <div>
                   <p className="text-xs font-semibold text-text-light uppercase tracking-wide mb-1.5">Antes</p>
-                  <pre className="text-xs text-text bg-white border border-border rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono">
+                  <pre className="text-xs text-text bg-surface-dark border border-border rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono">
                     {tryParseJson(e.oldValues) ?? e.oldValues}
                   </pre>
                 </div>
@@ -440,7 +440,7 @@ function AuditRow({
               {e.newValues && (
                 <div>
                   <p className="text-xs font-semibold text-text-light uppercase tracking-wide mb-1.5">Después</p>
-                  <pre className="text-xs text-text bg-white border border-border rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono">
+                  <pre className="text-xs text-text bg-surface-dark border border-border rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono">
                     {tryParseJson(e.newValues) ?? e.newValues}
                   </pre>
                 </div>

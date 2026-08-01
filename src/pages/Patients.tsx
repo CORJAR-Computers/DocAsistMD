@@ -103,7 +103,7 @@ export default function Patients() {
                 placeholder="Buscar por nombre, documento, telefono o email..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                className="w-full h-10 pl-10 pr-4 rounded-lg border border-border bg-white text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full h-10 pl-10 pr-4 rounded-lg border border-border bg-surface-dark text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <Button variant="outline" className="gap-2" onClick={() => setSearchQuery("")}>
@@ -145,7 +145,7 @@ export default function Patients() {
                       </td>
                     </tr>
                   ) : paged.map((patient) => (
-                    <tr key={patient.id} className="hover:bg-surface-dark/30 transition-colors">
+                    <tr key={patient.id} className="hover:bg-surface-dark/30 transition-colors duration-200 motion-reduce:transition-none">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">

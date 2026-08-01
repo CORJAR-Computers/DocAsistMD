@@ -147,7 +147,7 @@ export default function PatientForm() {
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">Tipo de Documento *</label>
                 <select value={form.documentType} onChange={(e) => update("documentType", e.target.value)}
-                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                  className="w-full h-10 rounded-lg border border-border bg-surface-dark px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
                   {Object.entries(DOCUMENT_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
@@ -156,7 +156,7 @@ export default function PatientForm() {
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">Genero *</label>
                 <select value={form.gender} onChange={(e) => update("gender", e.target.value)}
-                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                  className="w-full h-10 rounded-lg border border-border bg-surface-dark px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
                   {Object.entries(GENDER_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
@@ -186,7 +186,7 @@ export default function PatientForm() {
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">Tipo de Sangre</label>
                 <select value={form.bloodType} onChange={(e) => update("bloodType", e.target.value)}
-                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
+                  className="w-full h-10 rounded-lg border border-border bg-surface-dark px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary">
                   <option value="">Seleccionar</option>
                   {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -227,7 +227,7 @@ export default function PatientForm() {
               value={form.notes}
               onChange={(e) => update("notes", e.target.value)}
               placeholder="Observaciones adicionales del paciente..."
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              className="w-full rounded-lg border border-border bg-surface-dark px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary resize-none"
               rows={3}
             />
           </CardContent>

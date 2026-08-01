@@ -245,7 +245,7 @@ export default function Appointments() {
         width: `calc(${100 / p.lanes}% - 4px)`,
       }}
       className={cn(
-        "absolute z-10 rounded-md px-1.5 py-0.5 text-left text-[10px] leading-tight overflow-hidden shadow-sm hover:shadow-md hover:z-20 transition-all",
+        "absolute z-10 rounded-md px-1.5 py-0.5 text-left text-[10px] leading-tight overflow-hidden shadow-sm hover:shadow-md hover:z-20 transition-all motion-reduce:transition-none",
         APPOINTMENT_STATUS_COLORS[p.apt.status]
       )}
       title={`${formatTime(p.apt.dateTime)} · ${p.apt.patientName} · ${APPOINTMENT_STATUS_LABELS[p.apt.status]}`}
@@ -315,8 +315,8 @@ export default function Appointments() {
                 <button
                   onClick={() => setView("month")}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                    view === "month" ? "bg-white text-primary shadow-sm" : "text-text-light hover:text-text"
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
+                    view === "month" ? "bg-surface text-primary shadow-sm" : "text-text-light hover:text-text"
                   )}
                 >
                   <LayoutGrid className="w-4 h-4" /> Mes
@@ -324,8 +324,8 @@ export default function Appointments() {
                 <button
                   onClick={() => setView("week")}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                    view === "week" ? "bg-white text-primary shadow-sm" : "text-text-light hover:text-text"
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
+                    view === "week" ? "bg-surface text-primary shadow-sm" : "text-text-light hover:text-text"
                   )}
                 >
                   <CalendarRange className="w-4 h-4" /> Semana
@@ -333,8 +333,8 @@ export default function Appointments() {
                 <button
                   onClick={() => setView("list")}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                    view === "list" ? "bg-white text-primary shadow-sm" : "text-text-light hover:text-text"
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
+                    view === "list" ? "bg-surface text-primary shadow-sm" : "text-text-light hover:text-text"
                   )}
                 >
                   <List className="w-4 h-4" /> Día
@@ -414,7 +414,7 @@ export default function Appointments() {
                         key={key}
                         onClick={() => setSelectedDate(key)}
                         className={cn(
-                          "min-h-[104px] border-b border-r border-border/50 p-1.5 cursor-pointer transition-colors group",
+                          "min-h-[104px] border-b border-r border-border/50 p-1.5 cursor-pointer transition-colors duration-200 motion-reduce:transition-none group",
                           isToday(date) ? "bg-primary/[0.04]" : "hover:bg-surface-dark/40"
                         )}
                       >
@@ -431,7 +431,7 @@ export default function Appointments() {
                           </span>
                           <button
                             onClick={(e) => { e.stopPropagation(); openCreate(key + "T09:00"); }}
-                            className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded bg-primary/10 text-primary hover:bg-primary hover:text-white flex items-center justify-center transition-all"
+                            className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded bg-primary/10 text-primary hover:bg-primary hover:text-white flex items-center justify-center transition-all motion-reduce:transition-none"
                             title="Nueva cita este día"
                           >
                             <Plus className="w-3 h-3" />
@@ -443,7 +443,7 @@ export default function Appointments() {
                               key={apt.id}
                               onClick={(e) => { e.stopPropagation(); setDetailApt(apt); }}
                               className={cn(
-                                "w-full text-left rounded px-1.5 py-0.5 text-[11px] leading-tight truncate hover:brightness-95 transition-all",
+                                "w-full text-left rounded px-1.5 py-0.5 text-[11px] leading-tight truncate hover:brightness-95 transition-all motion-reduce:transition-none",
                                 APPOINTMENT_STATUS_COLORS[apt.status]
                               )}
                               title={`${formatTime(apt.dateTime)} · ${apt.patientName} · ${APPOINTMENT_STATUS_LABELS[apt.status]}`}
@@ -475,7 +475,7 @@ export default function Appointments() {
                       <div
                         key={toDateKey(d)}
                         onClick={() => setSelectedDate(toDateKey(d))}
-                        className={cn("px-2 py-2 text-center cursor-pointer transition-colors", isToday(d) && "bg-primary/[0.06]")}
+                        className={cn("px-2 py-2 text-center cursor-pointer transition-colors duration-200 motion-reduce:transition-none", isToday(d) && "bg-primary/[0.06]")}
                       >
                         <p className="text-[10px] font-semibold text-text-light uppercase tracking-wider">
                           {DAY_LABELS[(d.getDay() + 6) % 7]}
@@ -574,7 +574,7 @@ export default function Appointments() {
                       {dayList.map((apt) => (
                         <div
                           key={apt.id}
-                          className="rounded-lg border border-border/60 bg-white p-3 hover:shadow-sm transition-all"
+                          className="rounded-lg border border-border/60 bg-surface-dark p-3 hover:shadow-sm transition-all motion-reduce:transition-none"
                         >
                           <div className="flex items-center gap-2 mb-1.5">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

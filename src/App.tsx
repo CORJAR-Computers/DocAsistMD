@@ -18,6 +18,7 @@ import AuditLog from "@/pages/AuditLog";
 import Settings from "@/pages/Settings";
 import { useAuthStore } from "@/stores/authStore";
 import "./index.css";
+import "./dark-mode.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

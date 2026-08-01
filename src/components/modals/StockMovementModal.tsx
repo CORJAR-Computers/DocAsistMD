@@ -90,7 +90,7 @@ export default function StockMovementModal({ medication, initialType = "in", onC
               <p className="text-xs text-text-light">{medication.name}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-surface-dark flex items-center justify-center text-text-light hover:text-text transition-colors">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-surface-hover flex items-center justify-center text-text-light hover:text-text transition-colors duration-200 motion-reduce:transition-none">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -103,10 +103,10 @@ export default function StockMovementModal({ medication, initialType = "in", onC
             <button
               type="button"
               onClick={() => { setMovementType("in"); setReason(""); }}
-              className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+              className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all motion-reduce:transition-none ${
                 isIn
-                  ? "border-success bg-success/10 text-emerald-700 ring-2 ring-success/30"
-                  : "border-border bg-white text-text-light hover:border-success/40"
+                  ? "border-success bg-success/10 text-success-text ring-2 ring-success/30"
+                  : "border-border bg-surface-dark text-text-light hover:border-success/40"
               }`}
             >
               <ArrowDownToLine className="w-4 h-4" /> Entrada
@@ -114,10 +114,10 @@ export default function StockMovementModal({ medication, initialType = "in", onC
             <button
               type="button"
               onClick={() => { setMovementType("out"); setReason(""); }}
-              className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+              className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all motion-reduce:transition-none ${
                 !isIn
-                  ? "border-danger bg-danger/10 text-red-700 ring-2 ring-danger/30"
-                  : "border-border bg-white text-text-light hover:border-danger/40"
+                  ? "border-danger bg-danger/10 text-danger-text ring-2 ring-danger/30"
+                  : "border-border bg-surface-dark text-text-light hover:border-danger/40"
               }`}
             >
               <ArrowUpFromLine className="w-4 h-4" /> Salida
@@ -170,7 +170,7 @@ export default function StockMovementModal({ medication, initialType = "in", onC
             <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancelar</Button>
             <Button
               type="submit"
-              className={`flex-1 gap-2 ${isIn ? "bg-success text-white hover:bg-emerald-600" : "bg-danger text-white hover:bg-red-600"}`}
+              className={`flex-1 gap-2 ${isIn ? "bg-success text-white hover:bg-success-dark" : "bg-danger text-white hover:bg-danger-dark"}`}
               disabled={saving || quantity <= 0}
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : isIn ? <ArrowDownToLine className="w-4 h-4" /> : <ArrowUpFromLine className="w-4 h-4" />}

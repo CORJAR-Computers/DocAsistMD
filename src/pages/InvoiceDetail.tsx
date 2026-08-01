@@ -150,11 +150,11 @@ export default function InvoiceDetailPage() {
       )}
 
       {pdfPath && (
-        <div className="no-print flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20 text-emerald-700 text-sm">
+        <div className="no-print flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20 text-success-text text-sm">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="font-medium">PDF generado correctamente</p>
-            <p className="text-xs text-emerald-600 truncate font-mono">{pdfPath}</p>
+            <p className="text-xs text-success-text truncate font-mono">{pdfPath}</p>
           </div>
           <Button
             variant="outline" size="sm" className="h-7 gap-1 text-xs flex-shrink-0"
