@@ -20,12 +20,13 @@ import {
   Sun,
   Moon,
   MonitorSmartphone,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useUIStore, type ThemeMode } from "@/stores/uiStore";
 import { canAccess, type ModuleKey } from "@/lib/permissions";
+import AboutModal from "@/components/modals/AboutModal";
 
 const navItems: { to: string; icon: typeof LayoutDashboard; label: string; module: ModuleKey }[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", module: "dashboard" },
@@ -57,6 +58,7 @@ export default function MainLayout() {
   const setSearchQuery = usePatientStore((s) => s.setSearchQuery);
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
+  const [showAbout, setShowAbout] = useState(false);
   const ThemeIcon = themeConfig[theme].icon;
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -78,7 +80,7 @@ export default function MainLayout() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10">
-          <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center shrink-0">
             <Activity className="w-5 h-5 text-white" />
           </div>
           {!sidebarCollapsed && (
@@ -105,16 +107,16 @@ export default function MainLayout() {
                 )
               }
             >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
+              <item.icon className="w-5 h-5 shrink-0" />
               {!sidebarCollapsed && <span>{item.label}</span>}
             </NavLink>
           ))}
         </nav>
 
         {/* User section */}
-        <div className="border-t border-white/10 p-3">
+        <div className="border-t border-white/10 p-3 space-y-1">
           {!sidebarCollapsed && (
-            <div className="flex items-center gap-3 mb-3 px-2">
+            <div className="flex items-center gap-3 mb-2 px-2">
               <div className="w-9 h-9 bg-secondary/20 rounded-full flex items-center justify-center text-sm font-semibold text-secondary">
                 {user?.fullName?.charAt(0) || "U"}
               </div>
@@ -124,6 +126,16 @@ export default function MainLayout() {
               </div>
             </div>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAbout(true)}
+            className="w-full text-white/60 hover:text-white hover:bg-sidebar-hover justify-start"
+            title="Acerca de DocAsistMD"
+          >
+            <Info className="w-4 h-4" />
+            {!sidebarCollapsed && <span className="ml-2">Acerca de</span>}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -139,7 +151,7 @@ export default function MainLayout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar */}
-        <header className="h-16 bg-surface-dark border-b border-border flex items-center justify-between px-6 flex-shrink-0">
+        <header className="h-16 bg-surface-dark border-b border-border flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
             <button
               onClick={toggleSidebar}
@@ -155,6 +167,17 @@ export default function MainLayout() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Botón Acerca de en Header */}
+            <button
+              type="button"
+              onClick={() => setShowAbout(true)}
+              title="Acerca de DocAsistMD (Licencia e Información)"
+              aria-label="Acerca de DocAsistMD"
+              className="p-2 rounded-lg hover:bg-surface-hover transition-colors duration-200 motion-reduce:transition-none text-text-light"
+            >
+              <Info className="w-5 h-5" />
+            </button>
+
             {/* Toggle de tema: Sistema → Claro → Oscuro */}
             <button
               type="button"
@@ -189,6 +212,10 @@ export default function MainLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Modal Acerca de */}
+      <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
     </div>
   );
 }
+

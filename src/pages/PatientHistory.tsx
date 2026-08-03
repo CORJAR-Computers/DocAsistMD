@@ -148,10 +148,10 @@ export default function PatientHistory() {
       </div>
 
       {/* Patient Summary Card */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/3 to-secondary/3">
+      <Card className="border-primary/20 bg-linear-to-r from-primary/3 to-secondary/3">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-start gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-xl font-bold text-primary flex-shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-xl font-bold text-primary shrink-0">
               {patient.firstName[0]}{patient.lastName[0]}
             </div>
             <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -289,7 +289,7 @@ export default function PatientHistory() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     {c.vitalSigns && (
                       <div className="flex gap-2">
-                        <Activity className="w-4 h-4 text-text-muted mt-0.5 flex-shrink-0" />
+                        <Activity className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
                         <div>
                           <p className="text-xs font-medium text-text-light mb-0.5">Signos Vitales</p>
                           <p className="text-text">{c.vitalSigns}</p>
@@ -298,7 +298,7 @@ export default function PatientHistory() {
                     )}
                     {c.symptoms && (
                       <div className="flex gap-2">
-                        <AlertCircle className="w-4 h-4 text-text-muted mt-0.5 flex-shrink-0" />
+                        <AlertCircle className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
                         <div>
                           <p className="text-xs font-medium text-text-light mb-0.5">Síntomas</p>
                           <p className="text-text">{c.symptoms}</p>
@@ -307,7 +307,7 @@ export default function PatientHistory() {
                     )}
                     {c.treatmentPlan && (
                       <div className="md:col-span-2 flex gap-2">
-                        <FileText className="w-4 h-4 text-text-muted mt-0.5 flex-shrink-0" />
+                        <FileText className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
                         <div>
                           <p className="text-xs font-medium text-text-light mb-0.5">Plan de Tratamiento</p>
                           <p className="text-text">{c.treatmentPlan}</p>
@@ -316,7 +316,7 @@ export default function PatientHistory() {
                     )}
                     {c.clinicalNotes && (
                       <div className="md:col-span-2 flex gap-2">
-                        <FileText className="w-4 h-4 text-text-muted mt-0.5 flex-shrink-0" />
+                        <FileText className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
                         <div>
                           <p className="text-xs font-medium text-text-light mb-0.5">Notas Clínicas</p>
                           <p className="text-text text-sm italic">{c.clinicalNotes}</p>
@@ -342,7 +342,7 @@ export default function PatientHistory() {
                           const mv = movementMap[rx.id];
                           return (
                             <div key={rx.id} className={`flex items-start gap-2 px-3 py-2 rounded-lg bg-secondary/5 border border-secondary/10 ${mv?.reversedAt ? "opacity-70" : ""}`}>
-                              <Pill className="w-3.5 h-3.5 text-secondary mt-0.5 flex-shrink-0" />
+                              <Pill className="w-3.5 h-3.5 text-secondary mt-0.5 shrink-0" />
                               <div className="text-xs flex-1 min-w-0">
                                 <p className="font-medium text-text">{medicationMap[rx.medicationId] || "Medicamento"}</p>
                                 <p className="text-text-light">{rx.dosage} — {rx.frequency} — {rx.duration}</p>
@@ -351,7 +351,7 @@ export default function PatientHistory() {
                                 )}
                                 {rx.instructions && <p className="text-text-muted italic mt-0.5">{rx.instructions}</p>}
                               </div>
-                              <div className="flex-shrink-0 self-start">
+                              <div className="shrink-0 self-start">
                                 {mv?.reversedAt ? (
                                   <Badge
                                     variant="secondary"
@@ -405,7 +405,7 @@ export default function PatientHistory() {
               <Card key={a.id} className="hover:shadow-sm transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-surface-dark flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-surface-dark flex items-center justify-center shrink-0">
                       <Calendar className="w-5 h-5 text-text-light" />
                     </div>
                     <div className="flex-1 min-w-0">

@@ -51,7 +51,7 @@ function App() {
 
   if (initializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F2B3D] via-[#1B6B93] to-[#4FC0D0]">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-sidebar via-[#1B6B93] to-secondary">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
           <p className="text-white/70 text-sm">Cargando DocAsistMD...</p>

@@ -252,7 +252,7 @@ export default function Appointments() {
     >
       <span className="font-mono font-bold block">{formatTime(p.apt.dateTime)}</span>
       <span className="block truncate font-medium">{p.apt.patientName.split(" ")[0]}</span>
-      <span className="block truncate opacity-80 hidden sm:block">{APPOINTMENT_TYPE_LABELS[p.apt.appointmentType]}</span>
+      <span className="truncate opacity-80 hidden sm:block">{APPOINTMENT_TYPE_LABELS[p.apt.appointmentType]}</span>
     </button>
   );
 
@@ -287,7 +287,7 @@ export default function Appointments() {
           style={{ top: (nowMinutes - HOUR_START * 60) * PX_PER_MIN }}
         >
           <div className="h-0.5 bg-red-500 relative">
-            <span className="absolute left-0 -top-[3px] w-2 h-2 rounded-full bg-red-500" />
+            <span className="absolute left-0 -top-0.75 w-2 h-2 rounded-full bg-red-500" />
           </div>
         </div>
       )}
@@ -346,7 +346,7 @@ export default function Appointments() {
                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => shift(-1)}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/5 min-w-[140px] justify-center">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/5 min-w-35 justify-center">
                   <CalendarDays className="w-4 h-4 text-primary" />
                   <span className="text-sm font-medium text-primary capitalize">{viewLabel()}</span>
                 </div>
@@ -404,7 +404,7 @@ export default function Appointments() {
                 <div className="grid grid-cols-7">
                   {monthGrid.map((date, i) => {
                     if (!date) {
-                      return <div key={`empty-${i}`} className="min-h-[104px] border-b border-r border-border/50 bg-surface/40" />;
+                      return <div key={`empty-${i}`} className="min-h-26 border-b border-r border-border/50 bg-surface/40" />;
                     }
                     const key = toDateKey(date);
                     const dayApts = byDay[key] || [];
@@ -414,8 +414,8 @@ export default function Appointments() {
                         key={key}
                         onClick={() => setSelectedDate(key)}
                         className={cn(
-                          "min-h-[104px] border-b border-r border-border/50 p-1.5 cursor-pointer transition-colors duration-200 motion-reduce:transition-none group",
-                          isToday(date) ? "bg-primary/[0.04]" : "hover:bg-surface-dark/40"
+                          "min-h-26 border-b border-r border-border/50 p-1.5 cursor-pointer transition-colors duration-200 motion-reduce:transition-none group",
+                          isToday(date) ? "bg-primary/4" : "hover:bg-surface-dark/40"
                         )}
                       >
                         <div className="flex items-center justify-between mb-1">
@@ -467,7 +467,7 @@ export default function Appointments() {
           {view === "week" && (
             <Card>
               <CardContent className="p-0 overflow-x-auto">
-                <div className="min-w-[920px]">
+                <div className="min-w-230">
                   {/* Day headers */}
                   <div className="grid sticky top-0 z-30 border-b border-border bg-surface-dark/95 backdrop-blur" style={{ gridTemplateColumns: `56px repeat(7, 1fr)` }}>
                     <div />
@@ -475,7 +475,7 @@ export default function Appointments() {
                       <div
                         key={toDateKey(d)}
                         onClick={() => setSelectedDate(toDateKey(d))}
-                        className={cn("px-2 py-2 text-center cursor-pointer transition-colors duration-200 motion-reduce:transition-none", isToday(d) && "bg-primary/[0.06]")}
+                        className={cn("px-2 py-2 text-center cursor-pointer transition-colors duration-200 motion-reduce:transition-none", isToday(d) && "bg-primary/6")}
                       >
                         <p className="text-[10px] font-semibold text-text-light uppercase tracking-wider">
                           {DAY_LABELS[(d.getDay() + 6) % 7]}
@@ -528,7 +528,7 @@ export default function Appointments() {
             <div className="grid lg:grid-cols-[1fr_340px] gap-4 items-start">
               <Card>
                 <CardContent className="p-0 overflow-x-auto">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border min-w-[560px]">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border min-w-140">
                     <p className="text-sm font-semibold text-text capitalize">
                       {new Date(selectedDate + "T12:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })}
                     </p>
@@ -539,7 +539,7 @@ export default function Appointments() {
                       </Button>
                     </div>
                   </div>
-                  <div className="min-w-[560px]">
+                  <div className="min-w-140">
                     <div className="grid" style={{ gridTemplateColumns: `56px 1fr` }}>
                       {timeGutter(gridHeight)}
                       <div
@@ -577,7 +577,7 @@ export default function Appointments() {
                           className="rounded-lg border border-border/60 bg-surface-dark p-3 hover:shadow-sm transition-all motion-reduce:transition-none"
                         >
                           <div className="flex items-center gap-2 mb-1.5">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                               <Clock className="w-3.5 h-3.5 text-primary" />
                             </div>
                             <div className="min-w-0 flex-1">
