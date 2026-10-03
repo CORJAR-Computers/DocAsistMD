@@ -5,26 +5,31 @@ use crate::financial_excel;
 use crate::financial_pdf;
 use crate::models::RevenueReport;
 use crate::repositories::financial_repo;
+use crate::session::SessionState;
 use tauri::State;
 
 #[tauri::command]
 pub fn get_revenue_report(
     state: State<DbState>,
+    session: State<SessionState>,
     start_date: String,
     end_date: String,
 ) -> Result<RevenueReport, AppError> {
     let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    crate::session::require_admin(&session, &mut conn)?;
     financial_repo::get_revenue_report(&mut conn, &start_date, &end_date)
 }
 
 #[tauri::command]
 pub fn generate_revenue_pdf(
     state: State<DbState>,
+    session: State<SessionState>,
     start_date: String,
     end_date: String,
     out_dir: Option<String>,
 ) -> Result<String, AppError> {
     let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    crate::session::require_admin(&session, &mut conn)?;
     let report = financial_repo::get_revenue_report(&mut conn, &start_date, &end_date)?;
 
     let out_path = exports::resolve_dir(out_dir.as_deref(), "Reportes").join(format!("reporte-financiero-{}-a-{}.pdf", start_date, end_date));
@@ -35,11 +40,13 @@ pub fn generate_revenue_pdf(
 #[tauri::command]
 pub fn generate_revenue_excel(
     state: State<DbState>,
+    session: State<SessionState>,
     start_date: String,
     end_date: String,
     out_dir: Option<String>,
 ) -> Result<String, AppError> {
     let mut conn = state.conn.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    crate::session::require_admin(&session, &mut conn)?;
     let report = financial_repo::get_revenue_report(&mut conn, &start_date, &end_date)?;
 
     let out_path = exports::resolve_dir(out_dir.as_deref(), "Reportes").join(format!("reporte-financiero-{}-a-{}.xlsx", start_date, end_date));

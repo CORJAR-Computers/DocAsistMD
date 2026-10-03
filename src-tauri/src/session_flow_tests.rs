@@ -100,3 +100,61 @@ fn login_rejects_invalid_credentials_and_sets_no_session() {
         "no session file after failed login"
     );
 }
+
+#[test]
+fn rbac_sensitive_operations_require_admin_role() {
+    let _lock = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let _tmp = TempDir::new();
+    let _appdata = AppDataGuard::set(_tmp.path());
+
+    let mut db = TestDb::new().expect("create test db");
+    make_user(db.conn(), "admin_rbac", "admin", "active");
+    make_user(db.conn(), "doctor_rbac", "doctor", "active");
+    make_user(db.conn(), "recep_rbac", "receptionist", "active");
+
+    // 1. Doctor intenta acceder a operaciones de administrador -> Rechazado
+    let doc_session = SessionState::default();
+    login_core(
+        db.conn(),
+        &doc_session,
+        LoginRequest {
+            username: "doctor_rbac".into(),
+            password: "test123".into(),
+        },
+    )
+    .expect("doctor login succeeds");
+    let err = session::require_admin(&doc_session, db.conn())
+        .expect_err("doctor must NOT pass require_admin");
+    assert!(matches!(err, AppError::Auth(_)));
+
+    // 2. Recepcionista intenta acceder a operaciones de administrador -> Rechazado
+    let recep_session = SessionState::default();
+    login_core(
+        db.conn(),
+        &recep_session,
+        LoginRequest {
+            username: "recep_rbac".into(),
+            password: "test123".into(),
+        },
+    )
+    .expect("receptionist login succeeds");
+    let err = session::require_admin(&recep_session, db.conn())
+        .expect_err("receptionist must NOT pass require_admin");
+    assert!(matches!(err, AppError::Auth(_)));
+
+    // 3. Admin accede a operaciones protegidas -> Permitido
+    let admin_session = SessionState::default();
+    login_core(
+        db.conn(),
+        &admin_session,
+        LoginRequest {
+            username: "admin_rbac".into(),
+            password: "test123".into(),
+        },
+    )
+    .expect("admin login succeeds");
+    let admin_user = session::require_admin(&admin_session, db.conn())
+        .expect("admin must pass require_admin");
+    assert_eq!(admin_user.role, "admin");
+}
+
