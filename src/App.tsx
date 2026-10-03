@@ -8,6 +8,7 @@ import { canAccess, type ModuleKey } from "@/lib/permissions";
 import type { UserRole } from "@/types/auth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Toaster from "@/components/ui/toaster";
+import AccessDenied from "@/components/AccessDenied";
 import { Loader2 } from "lucide-react";
 import "./index.css";
 import "./dark-mode.css";
@@ -45,11 +46,13 @@ function PageLoader() {
   );
 }
 
-/** Guard de ruta por módulo: redirige al dashboard si el rol no tiene acceso. */
+/** Guard de ruta por módulo: muestra pantalla de acceso restringido si el rol no tiene permisos. */
 function RequireModule({ module, children }: { module: ModuleKey; children: ReactNode }) {
   const { user } = useAuthStore();
   if (!user) return <Navigate to="/login" replace />;
-  if (!canAccess(user.role as UserRole, module)) return <Navigate to="/" replace />;
+  if (!canAccess(user.role as UserRole, module)) {
+    return <AccessDenied module={module} />;
+  }
   return <>{children}</>;
 }
 

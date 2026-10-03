@@ -168,8 +168,11 @@ export default function Settings() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-text">Configuracion</h1>
-        <p className="text-sm text-text-light mt-1">Ajustes del sistema DocAsistMD</p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-text">Configuracion</h1>
+          <Badge variant="default" className="text-[11px] font-medium">Solo Administrador</Badge>
+        </div>
+        <p className="text-sm text-text-light mt-1">Ajustes del sistema DocAsistMD, base de datos y gestión de usuarios</p>
       </div>
 
       <Card>

@@ -29,22 +29,20 @@ describe("permissions", () => {
     }
   });
 
-  it("doctor accede a módulos clínicos y reportes, pero no a billing/audit/settings", () => {
+  it("doctor accede a módulos clínicos y operativos, pero no a módulos sensibles ni billing", () => {
     const allowed = new Set<ModuleKey>([
       "dashboard",
       "patients",
       "appointments",
       "consultations",
-      "doctors",
       "medications",
-      "reports",
     ]);
     for (const module of ALL_MODULES) {
       expect(canAccess("doctor", module)).toBe(allowed.has(module));
     }
   });
 
-  it("receptionist accede a pacientes/citas/billing, pero no a módulos clínicos ni de admin", () => {
+  it("receptionist accede a pacientes/citas/billing, pero no a módulos clínicos ni sensibles", () => {
     const allowed = new Set<ModuleKey>([
       "dashboard",
       "patients",
@@ -53,6 +51,15 @@ describe("permissions", () => {
     ]);
     for (const module of ALL_MODULES) {
       expect(canAccess("receptionist", module)).toBe(allowed.has(module));
+    }
+  });
+
+  it("módulos sensibles (doctors, reports, audit, settings) están restringidos exclusivamente a admin", () => {
+    const sensitiveModules: ModuleKey[] = ["doctors", "reports", "audit", "settings"];
+    for (const mod of sensitiveModules) {
+      expect(canAccess("admin", mod)).toBe(true);
+      expect(canAccess("doctor", mod)).toBe(false);
+      expect(canAccess("receptionist", mod)).toBe(false);
     }
   });
 

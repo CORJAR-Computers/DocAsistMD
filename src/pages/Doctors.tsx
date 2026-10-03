@@ -8,7 +8,11 @@ import { UserPlus, Phone, Mail, Stethoscope, Clock } from "lucide-react";
 import { apiCall } from "@/services/api";
 import NewDoctorModal from "@/components/modals/NewDoctorModal";
 
+import { useAuthStore } from "@/stores/authStore";
+
 export default function Doctors() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,10 +28,17 @@ export default function Doctors() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text">Medicos</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-text">Medicos</h1>
+            <Badge variant="default" className="text-[11px] font-medium">Gestión Administrativa</Badge>
+          </div>
           <p className="text-sm text-text-light mt-1">{loading ? "Cargando..." : `${doctors.length} médicos registrados`}</p>
         </div>
-        <Button className="gap-2" onClick={() => setShowModal(true)}><UserPlus className="w-4 h-4" /> Nuevo Médico</Button>
+        {isAdmin && (
+          <Button className="gap-2" onClick={() => setShowModal(true)}>
+            <UserPlus className="w-4 h-4" /> Nuevo Médico
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
