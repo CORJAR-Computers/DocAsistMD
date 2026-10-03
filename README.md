@@ -79,11 +79,13 @@ Para ejecutar o compilar el proyecto en entorno local:
 ## 🖥️ Ejecución en Desarrollo
 
 Instalar dependencias del frontend:
+
 ```bash
 npm install
 ```
 
 Ejecutar la suite de pruebas unitarias:
+
 ```bash
 # Pruebas de Frontend (Vitest)
 npm test
@@ -94,6 +96,7 @@ cargo test
 ```
 
 Iniciar la aplicación en modo desarrollo (inicia el servidor Vite y la ventana nativa de Tauri):
+
 ```bash
 npm run tauri dev
 ```
