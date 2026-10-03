@@ -18,6 +18,7 @@ import {
 import type { InventoryMovement } from "@/types/medication";
 import NewConsultationModal from "@/components/modals/NewConsultationModal";
 import NewAppointmentModal from "@/components/modals/NewAppointmentModal";
+import MedicalDisabilityModal from "@/components/modals/MedicalDisabilityModal";
 import PrescriptionPdfButton from "@/components/PrescriptionPdfButton";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -45,6 +46,7 @@ export default function PatientHistory() {
   const [activeTab, setActiveTab] = useState<"consultations" | "appointments">("consultations");
   const [showConsultModal, setShowConsultModal] = useState(false);
   const [showApptModal, setShowApptModal] = useState(false);
+  const [showDisabilityModal, setShowDisabilityModal] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -234,7 +236,10 @@ export default function PatientHistory() {
             Citas ({appointments.length})
           </button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowDisabilityModal(true)}>
+            <FileText className="w-3.5 h-3.5 text-secondary" /> Incapacidad Médica
+          </Button>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowApptModal(true)}>
             <Calendar className="w-3.5 h-3.5" /> Nueva Cita
           </Button>
@@ -443,6 +448,15 @@ export default function PatientHistory() {
           preselectedPatientId={id}
           onClose={() => setShowApptModal(false)}
           onCreated={() => { setShowApptModal(false); load(); }}
+        />
+      )}
+      {showDisabilityModal && patient && (
+        <MedicalDisabilityModal
+          patient={patient}
+          doctorName={useAuthStore.getState().user?.fullName || "Médico Tratante"}
+          defaultDiagnosis={consultations[0]?.diagnosis || undefined}
+          defaultCie10={consultations[0]?.cie10Code || undefined}
+          onClose={() => setShowDisabilityModal(false)}
         />
       )}
     </div>

@@ -21,7 +21,7 @@ export interface Patient {
   updatedAt: string;
 }
 
-export type DocumentType = "CC" | "CE" | "TI" | "PP" | "NIT" | "RC";
+export type DocumentType = "CC" | "CE" | "TI" | "PP" | "NIT" | "RC" | "PPT";
 export type Gender = "M" | "F" | "O";
 
 export interface CreatePatientInput {
@@ -49,12 +49,13 @@ export interface UpdatePatientInput extends Partial<CreatePatientInput> {
 }
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
-  CC: "Cedula de Ciudadania",
-  CE: "Cedula de Extranjeria",
-  TI: "Tarjeta de Identidad",
-  PP: "Pasaporte",
+  CC: "Cédula de Ciudadanía (CC)",
+  CE: "Cédula de Extranjería (CE)",
+  TI: "Tarjeta de Identidad (TI)",
+  RC: "Registro Civil (RC)",
+  PPT: "Permiso por Protección Temporal (PPT)",
+  PP: "Pasaporte (PA)",
   NIT: "NIT",
-  RC: "Registro Civil",
 };
 
 export const GENDER_LABELS: Record<Gender, string> = {
