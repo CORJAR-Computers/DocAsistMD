@@ -38,6 +38,13 @@ fn main() {
                         "databases.conf",
                         "plugins.conf",
                         "gbak.exe",
+                        "isql.exe",
+                        "gfix.exe",
+                        "gstat.exe",
+                        "msvcp140.dll",
+                        "vcruntime140.dll",
+                        "vcruntime140_1.dll",
+                        "zlib1.dll",
                     ];
                     for f in &files_to_copy {
                         let src = fb_dir.join(f);
@@ -46,10 +53,13 @@ fn main() {
                             let _ = std::fs::copy(&src, &dst);
                         }
                     }
-                    let plugins_src = fb_dir.join("plugins");
-                    let plugins_dst = target_dir.join("plugins");
-                    if plugins_src.exists() && !plugins_dst.exists() {
-                        let _ = copy_dir_all(&plugins_src, &plugins_dst);
+                    let dirs_to_copy = ["plugins", "intl", "tzdata"];
+                    for d in &dirs_to_copy {
+                        let d_src = fb_dir.join(d);
+                        let d_dst = target_dir.join(d);
+                        if d_src.exists() && !d_dst.exists() {
+                            let _ = copy_dir_all(&d_src, &d_dst);
+                        }
                     }
                 }
             }

@@ -35,6 +35,49 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "languages": ["Spanish", "English"],
+        "displayLanguageSelector": false
+      }
+    },
+    "resources": {
+      "../Firebird-5.0.3.1683-0-windows-x64/fbclient.dll": "fbclient.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/ib_util.dll": "ib_util.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/icudt63.dll": "icudt63.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/icudt63l.dat": "icudt63l.dat",
+      "../Firebird-5.0.3.1683-0-windows-x64/icuin63.dll": "icuin63.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/icuuc63.dll": "icuuc63.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/firebird.msg": "firebird.msg",
+      "../Firebird-5.0.3.1683-0-windows-x64/firebird.conf": "firebird.conf",
+      "../Firebird-5.0.3.1683-0-windows-x64/databases.conf": "databases.conf",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins.conf": "plugins.conf",
+      "../Firebird-5.0.3.1683-0-windows-x64/gbak.exe": "gbak.exe",
+      "../Firebird-5.0.3.1683-0-windows-x64/isql.exe": "isql.exe",
+      "../Firebird-5.0.3.1683-0-windows-x64/gfix.exe": "gfix.exe",
+      "../Firebird-5.0.3.1683-0-windows-x64/gstat.exe": "gstat.exe",
+      "../Firebird-5.0.3.1683-0-windows-x64/msvcp140.dll": "msvcp140.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/vcruntime140.dll": "vcruntime140.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/vcruntime140_1.dll": "vcruntime140_1.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/zlib1.dll": "zlib1.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/chacha.dll": "plugins/chacha.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/default_profiler.dll": "plugins/default_profiler.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/engine13.dll": "plugins/engine13.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/fbtrace.dll": "plugins/fbtrace.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/legacy_auth.dll": "plugins/legacy_auth.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/legacy_usermanager.dll": "plugins/legacy_usermanager.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/srp.dll": "plugins/srp.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/udr_engine.conf": "plugins/udr_engine.conf",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/udr_engine.dll": "plugins/udr_engine.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/plugins/udr/udf_compat.dll": "plugins/udr/udf_compat.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/intl/fbintl.conf": "intl/fbintl.conf",
+      "../Firebird-5.0.3.1683-0-windows-x64/intl/fbintl.dll": "intl/fbintl.dll",
+      "../Firebird-5.0.3.1683-0-windows-x64/tzdata/ids.dat": "tzdata/ids.dat",
+      "../Firebird-5.0.3.1683-0-windows-x64/tzdata/metaZones.res": "tzdata/metaZones.res",
+      "../Firebird-5.0.3.1683-0-windows-x64/tzdata/timezoneTypes.res": "tzdata/timezoneTypes.res",
+      "../Firebird-5.0.3.1683-0-windows-x64/tzdata/windowsZones.res": "tzdata/windowsZones.res",
+      "../Firebird-5.0.3.1683-0-windows-x64/tzdata/zoneinfo64.res": "tzdata/zoneinfo64.res"
+    }
   }
 }
